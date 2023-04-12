@@ -12,11 +12,11 @@ pub enum EdgeChange {
     Added,
 }
 
-pub trait Graph<Id: Hash + Eq> {
+pub trait Graph<Id: Clone + Eq + Hash> {
     fn new() -> Self;
 
     // returns (V, E)
-    fn get_size(&self) -> (u64, u64);
+    fn get_size(&self) -> (usize, usize);
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr>;
 
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr>;

@@ -2,17 +2,17 @@ use std::sync::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::hash::Hash;
-use crate::graph::{GraphErr,Graph};
+use crate::graph::{EdgeChange,GraphErr,Graph};
 
-struct SimpleGraph<Id: Hash + Eq>
+struct SimpleGraph<Id: Clone + Eq + Hash>
 {
-    counter: u64,
+    counter: usize,
     // map from user's id to our id
-    map: RwLock<HashMap<Id, u64>>,
+    map: RwLock<HashMap<Id, usize>>,
     graph: RwLock<Vec<Arc<RwLock<Vec<Id>>>>>,
 }
 
-impl<Id: Hash + Eq> Graph<Id> for SimpleGraph<Id> {
+impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
     fn new() -> Self {
         Self { 
             counter: 0,
@@ -20,7 +20,7 @@ impl<Id: Hash + Eq> Graph<Id> for SimpleGraph<Id> {
             graph: RwLock::new(vec![]) }
     }
 
-    fn get_size(&self) -> (u64, u64) {
+    fn get_size(&self) -> (usize, usize) {
         (0, 0) // TODO is this useful
     }
 
@@ -55,7 +55,7 @@ impl<Id: Hash + Eq> Graph<Id> for SimpleGraph<Id> {
         Err(GraphErr::NoSuchEdge)
     }
 
-    fn update_or_add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
+    fn update_or_add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
         Err(GraphErr::NoSuchNode)
     }
 
