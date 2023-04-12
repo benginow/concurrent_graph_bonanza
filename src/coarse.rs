@@ -80,7 +80,7 @@ impl Graph<usize> for CoarseCSR {
     }
 
     fn get_edge(&self, from: usize, to: usize) -> Result<f64, GraphErr> {
-        let (v, e) = self.get_size();
+        let (_, e) = self.get_size();
         
         if from >= self.offsets.len() || to >= self.offsets.len() {
             Err(GraphErr::NoSuchNode)
@@ -118,7 +118,7 @@ impl Graph<usize> for CoarseCSR {
     fn remove_edge(&mut self, from: usize, to: usize) -> Result<f64, GraphErr> {
         match self.get_edge(from, to) {
             Ok(old_weight) => {
-                let (v, e) = self.get_size();
+                let (v, _) = self.get_size();
                 let (off_start, off_end) = self.get_offsets(from);
                 
                 // insert edge into edge list
@@ -168,7 +168,7 @@ impl Graph<usize> for CoarseCSR {
     }
 
     fn add_node(&mut self, id: usize) -> Result<(), GraphErr> {
-        let (v, e) = self.get_size();
+        let (v, _) = self.get_size();
             
         if id < v {
             Err(GraphErr::NodeAlreadyExists)
@@ -181,7 +181,7 @@ impl Graph<usize> for CoarseCSR {
     }
 
     fn remove_node(&mut self, id: usize) -> Result<(), GraphErr> {
-        let (v, e) = self.get_size();
+        let (v, _) = self.get_size();
 
         if id >= v {
             Err(GraphErr::NoSuchNode)
@@ -318,7 +318,7 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
                 let mut csr = self.csr.write().unwrap();
 
                 ids.remove(&id);
-                for (k, v) in ids.iter_mut() {
+                for (_, v) in ids.iter_mut() {
                     if v > &mut id_ {
                         *v = *v - 1;
                     }

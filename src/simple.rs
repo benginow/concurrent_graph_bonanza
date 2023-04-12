@@ -28,8 +28,8 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
             graph: Arc::new(RwLock::new(vec![])) }
     }
 
-    fn get_size(&self) -> (u64, u64) {
-        return (self.vertex_counter as u64, self.edge_counter as u64);
+    fn get_size(&self) -> (usize, usize) {
+        return (self.vertex_counter, self.edge_counter);
     }
 
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
