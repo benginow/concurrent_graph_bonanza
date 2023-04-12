@@ -7,6 +7,11 @@ pub enum GraphErr {
     EdgeAlreadyExists,
 }
 
+pub enum EdgeChange {
+    Updated(f64),
+    Added,
+}
+
 pub trait Graph<Id: Hash + Eq> {
     fn new() -> Self;
 
@@ -19,7 +24,7 @@ pub trait Graph<Id: Hash + Eq> {
     fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr>;
     fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr>;
     // returns edge already existed ? old edge weight : zero
-    fn update_or_add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr>;
+    fn update_or_add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr>;
     
     fn add_node(&mut self, id: Id) -> Result<(), GraphErr>;
     fn remove_node(&mut self, id: Id) -> Result<(), GraphErr>;
