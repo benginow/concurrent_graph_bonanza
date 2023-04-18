@@ -11,6 +11,7 @@ pub struct SimpleGraph<Id: Clone + Eq + Hash> {
     edge_counter: usize,
     // map from user's id to our id
     map: RwLock<HashMap<Id, usize>>,
+    id_to_value: RwLock<HashMap<usize, Id>>,
     // index and weight
     graph: Arc<RwLock<Vec<Arc<RwLock<Vec<(usize, f64)>>>>>>,
     // parents: RwLock<HashMap<Id,usize>>
@@ -23,9 +24,34 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
             vertex_counter: 0,
             edge_counter: 0,
             map: RwLock::new(HashMap::new()),
+            id_to_value: RwLock::new(HashMap::new()),
             graph: Arc::new(RwLock::new(vec![])),
             // this is a list of all parent nodes
         }
+    }
+
+    fn get_neighbors(&self, of: Id) -> Result<Vec<Id>, GraphErr> {
+        // get id
+        let read_map = self.map.read().unwrap();
+        let from_id = read_map.get(&of);
+
+        match from_id {
+            Some(id) => {
+                let read_graph = self.graph.read().unwrap();
+                // [id].read().unwrap();
+                let row = read_graph[*id].read().unwrap();
+                let cp = read_graph[*id].read().unwrap().clone().iter().map(|&(s, _)| s).collect();
+                
+                return Ok(cp);
+            }
+            None => {
+                return Err(GraphErr::NoSuchNode);
+            }
+        }
+
+        //return a copy of the vector :3
+        
+
     }
 
     fn get_size(&self) -> (usize, usize) {
@@ -179,6 +205,7 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
                         // now, add to the graph if and only if that edge doesnt already exist in the map
                         let read_g = self.graph.read().unwrap();
                         let read_graph = read_g[*from_id].read().unwrap();
+                        // need a way to take ids -> 
                         let idx = read_graph.iter().enumerate().find(|(id, _)| id == to);
                         match idx {
                             Some (x) => {

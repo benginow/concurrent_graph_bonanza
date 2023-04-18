@@ -19,7 +19,7 @@ pub trait Graph<Id: Clone + Eq + Hash> {
     fn get_size(&self) -> (usize, usize);
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr>;
 
-    fn get_neighbors(&self, id: Id) -> Result<Vec<Id>, GraphErr>;
+    fn get_neighbors(&self, of: Id) -> Result<Vec<Id>, GraphErr>;
 
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr>;
     // returns old edge weight
