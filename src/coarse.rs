@@ -5,7 +5,7 @@ use std::hash::Hash;
 use crate::graph::{GraphErr,EdgeChange,Graph};
 
 #[derive(Debug)]
-pub struct CoarseCSR {
+struct CoarseCSR {
     offsets: Vec<usize>,
     edges: Vec<(usize, f64)>,
 }
@@ -208,7 +208,7 @@ impl Graph<usize> for CoarseCSR {
     }
 }
 
-struct CoarseCSRGraph<Id: Clone + Eq + Hash> {
+pub struct CoarseCSRGraph<Id: Clone + Eq + Hash> {
     csr: Arc<RwLock<CoarseCSR>>,
     internal_ids: Arc<RwLock<HashMap<Id, usize>>>,
 }
