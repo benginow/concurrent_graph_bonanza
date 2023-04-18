@@ -31,6 +31,10 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for GraphOne<Id> {
         Err(GraphErr::NoSuchEdge)
     }
 
+    fn get_neighbors(&self, id: Id) -> Result<Vec<Id>, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
         Err(GraphErr::EdgeAlreadyExists)
     }

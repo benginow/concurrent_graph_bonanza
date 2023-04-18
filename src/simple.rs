@@ -67,6 +67,10 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
         }
     }
 
+    fn get_neighbors(&self, id: Id) -> Result<Vec<Id>, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+    
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
         // first, transform to ids
         let read_map = self.map.read().unwrap();

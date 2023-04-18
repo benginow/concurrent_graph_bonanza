@@ -102,6 +102,10 @@ impl Graph<usize> for CoarseCSR {
         }
     }
 
+    fn get_neighbors(&self, id: usize) -> Result<Vec<usize>, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+
     fn add_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<(), GraphErr> {
         match self.get_edge(from, to) {
             Ok(_) => Err(GraphErr::EdgeAlreadyExists),
@@ -252,6 +256,10 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
             },
             Err(e) => Err(e)
         }
+    }
+
+    fn get_neighbors(&self, id: Id) -> Result<Vec<Id>, GraphErr> {
+        Err(GraphErr::NoSuchNode)
     }
 
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {

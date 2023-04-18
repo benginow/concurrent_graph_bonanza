@@ -4,13 +4,10 @@ pub mod coarse;
 pub mod one;
 
 use std::fs;
-
 use crate::simple::SimpleGraph;
 use crate::graph::Graph;
 use crate::coarse::CoarseCSR;
 use crate::graph::GraphErr;
-
-
 
 fn main() {
     
@@ -66,12 +63,7 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     grapherr = g.remove_edge(3, 3);
     assert!(grapherr.is_err());
 
-    upodate_or_add_edge(2,3,.5);
-
-
-
-
-
+    g.update_or_add_edge(2, 3, 0.5);
 }
 
 
@@ -82,7 +74,6 @@ fn make_sure_graph_works_concurrent<G: Graph<usize>>(mut g: G) {
     // how can we make sure that these assertions are correct?
 
     // might just impl boruvka's for this
-
 }
 
 
