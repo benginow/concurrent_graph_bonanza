@@ -72,7 +72,9 @@ mod tests {
         grapherr = g.remove_edge(3, 3);
         assert!(grapherr.is_err());
     
-        g.update_or_add_edge(2,3,5);
+        g.update_or_add_edge(2,3,5.0);
+
+        // test that neighbors make sense
     
     
     }

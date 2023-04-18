@@ -11,6 +11,7 @@ pub struct SimpleGraph<Id: Clone + Eq + Hash> {
     edge_counter: usize,
     // map from user's id to our id
     map: RwLock<HashMap<Id, usize>>,
+    // need to update this every time a node is added!
     id_to_value: RwLock<HashMap<usize, Id>>,
     // index and weight
     graph: Arc<RwLock<Vec<Arc<RwLock<Vec<(usize, f64)>>>>>>,
@@ -40,9 +41,11 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
                 let read_graph = self.graph.read().unwrap();
                 // [id].read().unwrap();
                 let row = read_graph[*id].read().unwrap();
-                let cp = read_graph[*id].read().unwrap().clone().iter().map(|&(s, _)| s).collect();
-                
-                return Ok(cp);
+                let copied: Vec<usize> = read_graph[*id].read().unwrap().clone().iter().map(|&(s, _)| s).collect();
+                let ids: Vec<Id> = copied.iter().map(|&s| *self.id_to_value.read().unwrap().get(&s).unwrap()).collect();
+                // return Ok(cp);
+                // PLACEHOLDER
+                return Ok(ids);
             }
             None => {
                 return Err(GraphErr::NoSuchNode);
@@ -238,7 +241,11 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
                 Err(GraphErr::NodeAlreadyExists)
             }
             None => {
-                self.graph.write().unwrap().push(Arc::new(RwLock::new(vec![])));
+                let mut writing = self.graph.write().unwrap();
+                writing.push(Arc::new(RwLock::new(vec![])));
+                let length = writing.len();
+                self.map.write().unwrap().insert(id, length);
+                self.id_to_value.write().unwrap().insert(length, id);
                 Ok(())
             }
         }
