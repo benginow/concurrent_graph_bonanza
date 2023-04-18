@@ -15,6 +15,10 @@ fn main() {
     
 }
 
+fn SSSP<G: Graph<usize>>(mut g: G){
+    
+}
+
 #[cfg(test)]
 mod tests {
     use crate::Graph;
@@ -80,6 +84,8 @@ mod tests {
     }
 
 }
+
+
 
 
 
