@@ -17,8 +17,12 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use crate::Graph;
+    use crate::GraphErr;
+
     #[test]
     fn test_simple () {
+        use crate::SimpleGraph;
         let mut g: SimpleGraph<usize> = SimpleGraph::new();
         make_sure_graph_works(g);
         // g = SimpleGraph::new();
@@ -27,6 +31,7 @@ mod tests {
     
     #[test]
     fn test_coarse() {
+        use crate::CoarseCSR;
         let mut g: CoarseCSR = CoarseCSR::new();
         make_sure_graph_works(g);
         // g = CoarseCSR::new();
