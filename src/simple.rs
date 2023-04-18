@@ -5,7 +5,7 @@ use std::hash::Hash;
 use crate::graph::{EdgeChange,GraphErr,Graph};
 
 
-struct SimpleGraph<Id: Clone + Eq + Hash> {
+pub struct SimpleGraph<Id: Clone + Eq + Hash> {
 
     vertex_counter: usize,
     edge_counter: usize,
@@ -13,11 +13,9 @@ struct SimpleGraph<Id: Clone + Eq + Hash> {
     map: RwLock<HashMap<Id, usize>>,
     // index and weight
     graph: Arc<RwLock<Vec<Arc<RwLock<Vec<(usize, f64)>>>>>>,
+    // parents: RwLock<HashMap<Id,usize>>
 }
 
-// impl SimpleGraph<Id: Hash + Eq> {
-//     fn check_edge_exists()
-// }
 
 impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
     fn new() -> Self {
@@ -25,7 +23,9 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
             vertex_counter: 0,
             edge_counter: 0,
             map: RwLock::new(HashMap::new()),
-            graph: Arc::new(RwLock::new(vec![])) }
+            graph: Arc::new(RwLock::new(vec![])),
+            // this is a list of all parent nodes
+        }
     }
 
     fn get_size(&self) -> (usize, usize) {
@@ -211,7 +211,6 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
                 Err(GraphErr::NodeAlreadyExists)
             }
             None => {
-                // hmm.. concurrenct access kinda fishy here, might have to change this bad boy up..
                 self.graph.write().unwrap().push(Arc::new(RwLock::new(vec![])));
                 Ok(())
             }
@@ -219,15 +218,37 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
 
     }
 
-    // enough just to remove connections
-    // obviously, using a vector will probably be fairly slow here
+    // enough just to remove connections --  the id will now just be ignored, which is super space inefficient!
+    // extremely slow -- sequential search 
+    // messiest code of all time -- sorry!
     fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
         let read_map = self.map.read().unwrap();
         let read_id = read_map.get(&id);
 
         match read_id {
-            Some(r) => {
-                self.graph.write().unwrap().remove(*r);
+            Some(read_id) => {
+                let rg_placeholder = self.graph.read().unwrap();
+                let read_graph = rg_placeholder.iter();
+                // iterate over rows
+                for r in read_graph {
+                    // really awful performance, because we have to lock this every time
+                    let mut remove_index = None;
+                    let row_placeholder = r.read().unwrap();
+                    let row = row_placeholder.iter();
+                    
+                    for (idx, val) in row.enumerate() {
+                        if val.0 == *read_id {
+                            remove_index = Some(idx);
+                        }
+                    }
+                    match remove_index {
+                        Some(i) => {
+                            let mut write_row = r.write().unwrap();
+                            write_row.remove(i);
+                        }
+                        None => ()
+                    }
+                }
                 Ok(())
             }
             None => {
