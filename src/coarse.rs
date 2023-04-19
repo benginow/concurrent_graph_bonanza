@@ -145,32 +145,6 @@ impl Graph<usize> for CoarseCSR {
         }
     }
 
-    fn remove_edge(&mut self, from: usize, to: usize) -> Result<f64, GraphErr> {
-        match self.get_edge(from, to) {
-            Ok(old_weight) => {
-                let (v, _) = self.get_size();
-                let (off_start, off_end) = self.get_offsets(from);
-                
-                // insert edge into edge list
-                // TODO this could be a more effective data structure 🤪 don't use linear search?
-                for i in off_start..off_end {
-                    if self.edges[i].0 == to { // need to insert at this index
-                        self.edges.remove(i);
-                        break;
-                    }
-                }
-                
-                // shift offsets
-                for i in (from + 1)..v {
-                    self.offsets[i] -= 1;
-                }
-
-                Ok(old_weight)
-            },
-            Err(e) => Err(e)
-        }
-    }
-
     fn update_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<f64, GraphErr> {
         match self.get_edge(from, to) {
             Ok(old_weight) => {
@@ -209,6 +183,38 @@ impl Graph<usize> for CoarseCSR {
             Ok(())
         }
     }
+    
+    fn debug(&self) {
+        println!("{:?}", self);
+    }
+}
+
+impl CoarseCSR {
+    fn remove_edge(&mut self, from: usize, to: usize) -> Result<f64, GraphErr> {
+        match self.get_edge(from, to) {
+            Ok(old_weight) => {
+                let (v, _) = self.get_size();
+                let (off_start, off_end) = self.get_offsets(from);
+                
+                // insert edge into edge list
+                // TODO this could be a more effective data structure 🤪 don't use linear search?
+                for i in off_start..off_end {
+                    if self.edges[i].0 == to { // need to insert at this index
+                        self.edges.remove(i);
+                        break;
+                    }
+                }
+                
+                // shift offsets
+                for i in (from + 1)..v {
+                    self.offsets[i] -= 1;
+                }
+
+                Ok(old_weight)
+            },
+            Err(e) => Err(e)
+        }
+    }
 
     fn remove_node(&mut self, id: usize) -> Result<(), GraphErr> {
         let (v, _) = self.get_size();
@@ -239,10 +245,6 @@ impl Graph<usize> for CoarseCSR {
             
             Ok(())
         }
-    }
-
-    fn debug(&self) {
-        println!("{:?}", self);
     }
 }
 
@@ -339,16 +341,6 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         }
     }
 
-    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
-        match self.get_ids(&from, &to) {
-            Ok((f_, t_)) => {
-                let mut csr = self.csr.write().unwrap();
-                csr.remove_edge(f_, t_)
-            },
-            Err(e) => Err(e)
-        }
-    }
-
     fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
@@ -386,6 +378,30 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         }
     }
 
+    fn debug(&self) {
+        let map = self.internal_ids.read().unwrap();
+        println!("map:");
+        for (k, v) in map.iter() {
+            println!("{:?} -> {:?}", k, v);
+        }
+
+        let csr = self.csr.read().unwrap();
+        println!("csr:");
+        println!("{:?}", csr);
+    }
+}
+
+impl<Id: Clone + Debug + Eq + Hash> CoarseCSRGraph<Id> {
+    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
+        match self.get_ids(&from, &to) {
+            Ok((f_, t_)) => {
+                let mut csr = self.csr.write().unwrap();
+                csr.remove_edge(f_, t_)
+            },
+            Err(e) => Err(e)
+        }
+    }
+    
     fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
         match self.get_id(&id) {
             Ok(mut id_) => {
@@ -405,17 +421,5 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
                 Err(GraphErr::NodeAlreadyExists)
             }
         }
-    }
-
-    fn debug(&self) {
-        let map = self.internal_ids.read().unwrap();
-        println!("map:");
-        for (k, v) in map.iter() {
-            println!("{:?} -> {:?}", k, v);
-        }
-
-        let csr = self.csr.read().unwrap();
-        println!("csr:");
-        println!("{:?}", csr);
     }
 }

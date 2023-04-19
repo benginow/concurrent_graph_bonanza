@@ -96,11 +96,11 @@ impl Graph<usize> for CoarseLogList {
         let list = self.adj_list.read().unwrap();
         if list.len() > id {
             Ok(
-                list[id].clone()
-                    .into_iter()
+                list[id]
+                    .iter()
                     .map(
                         |(to, _)| {
-                            to
+                            *to
                         }
                     )
                     .collect()
@@ -132,11 +132,6 @@ impl Graph<usize> for CoarseLogList {
                 _ => Err(e)
             }
         }
-    }
-    
-    fn remove_edge(&mut self, from: usize, to: usize) -> Result<f64, GraphErr> {
-        // TODO
-        Err(GraphErr::NoSuchEdge)
     }
     
     fn update_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<f64, GraphErr> {
@@ -176,11 +171,6 @@ impl Graph<usize> for CoarseLogList {
 
         list.push(vec!());
         Ok(())
-    }
-
-    fn remove_node(&mut self, id: usize) -> Result<(), GraphErr> {
-        // TODO
-        Err(GraphErr::NoSuchNode)
     }
 
     fn debug(&self) {
@@ -234,10 +224,6 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
         Err(GraphErr::EdgeAlreadyExists)
     }
 
-    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
-        Err(GraphErr::NoSuchEdge)
-    }
-    
     fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
         Err(GraphErr::NoSuchEdge)
     }
@@ -248,10 +234,6 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     
     fn add_node(&mut self, id: Id) -> Result<(), GraphErr> {
         Err(GraphErr::NodeAlreadyExists)
-    }
-    
-    fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
-        Err(GraphErr::NoSuchNode)
     }
 
     fn debug(&self) {

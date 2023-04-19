@@ -185,47 +185,6 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         }
     }
 
-    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
-        let read_map = self.map.read().unwrap();
-        // get ids first
-        let from_id = read_map.get(&from);
-        match from_id {
-            Some(from_id) => {
-                let to_id = read_map.get(&to);
-                match to_id {
-                    Some(to) => {
-                        // now, add to the graph if and only if that edge doesnt already exist in the map
-                        let mut read_g = self.graph.read().unwrap();
-                        let mut read_graph = read_g[*from_id].write().unwrap();
-                        // let idx = read_graph.iter().enumerate().find(|(id, _)| id == to);
-                        let idx = read_graph.iter().position(|(id, _)| id == to);
-
-                        match idx {
-                            Some (x) => {
-                                // self.graph.read().unwrap()[*from_id].write().unwrap().remove(x.0);
-                                let edge_info = read_graph[x];
-                                read_graph.remove(x);
-                                Ok(edge_info.1)
-                                // read_graph.remove(x.0);
-                                // Ok(x.1.1)
-                            }
-                            None => {
-                                Err(GraphErr::NoSuchEdge)
-                            }
-                        }
-                    }
-                    None => {
-                        Err(GraphErr::NoSuchNode)
-                    }
-                }
-            }
-            None => {
-                Err(GraphErr::NoSuchNode)
-            }
-        }
-    }
-
-
     fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
         let read_map = self.map.read().unwrap();
         // get ids first
@@ -320,9 +279,55 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
 
     }
 
+
+    fn debug(&self) {
+        ()
+    }
+}
+
+impl<Id: Clone + Debug + Hash + Eq> SimpleGraph<Id> {
+    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
+        let read_map = self.map.read().unwrap();
+        // get ids first
+        let from_id = read_map.get(&from);
+        match from_id {
+            Some(from_id) => {
+                let to_id = read_map.get(&to);
+                match to_id {
+                    Some(to) => {
+                        // now, add to the graph if and only if that edge doesnt already exist in the map
+                        let mut read_g = self.graph.read().unwrap();
+                        let mut read_graph = read_g[*from_id].write().unwrap();
+                        // let idx = read_graph.iter().enumerate().find(|(id, _)| id == to);
+                        let idx = read_graph.iter().position(|(id, _)| id == to);
+
+                        match idx {
+                            Some (x) => {
+                                // self.graph.read().unwrap()[*from_id].write().unwrap().remove(x.0);
+                                let edge_info = read_graph[x];
+                                read_graph.remove(x);
+                                Ok(edge_info.1)
+                                // read_graph.remove(x.0);
+                                // Ok(x.1.1)
+                            }
+                            None => {
+                                Err(GraphErr::NoSuchEdge)
+                            }
+                        }
+                    }
+                    None => {
+                        Err(GraphErr::NoSuchNode)
+                    }
+                }
+            }
+            None => {
+                Err(GraphErr::NoSuchNode)
+            }
+        }
+    }
+
     // enough just to remove connections --  the id will now just be ignored, which is super space inefficient!
     // extremely slow -- sequential search 
-    // messiest code of all time -- sorry!
     fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
         let read_map = self.map.read().unwrap();
         let read_id = read_map.get(&id);
@@ -359,9 +364,5 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                 Err(GraphErr::NoSuchEdge)
             }
         }
-    }
-
-    fn debug(&self) {
-        ()
     }
 }

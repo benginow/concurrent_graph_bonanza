@@ -6,7 +6,24 @@ version = 3
 name = "concurrent_graph_bonanza"
 version = "0.1.0"
 dependencies = [
+ "disjoint-sets",
+ "fork",
  "lazy_static",
+]
+
+[[package]]
+name = "disjoint-sets"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ccbbca7d6a247007ca2535c616d4bb4a5fcad176ef0218671f96b88c52c3d34"
+
+[[package]]
+name = "fork"
+version = "0.1.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eaf4b001d25ec51f755157ecffa208b342747ea9a4365df5438b12925c7f0056"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -14,3 +31,9 @@ name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+
+[[package]]
+name = "libc"
+version = "0.2.141"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3304a64d199bb964be99741b7a14d26972741915b3649639149b2479bb46f4b5"

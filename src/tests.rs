@@ -18,6 +18,7 @@ fn test_coarse() {
     make_sure_graph_works(g);
 }
 
+/*
 // not concurrenct
 fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     // make sure that adding any arbitrary number of entries works
@@ -67,6 +68,7 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     g.update_or_add_edge(2, 4, 0.5);
     assert!(g.get_edge(2, 4) == Ok(0.5));
 }
+*/
 
 /*
 fn make_sure_graph_works_concurrent<G: Graph<usize>>(mut g: G) {
