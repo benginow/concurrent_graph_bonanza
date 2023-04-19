@@ -1,6 +1,7 @@
 // so the key feature of graphone is that we speed up edge writes by buffering of edge inserts?
 // and then we make our inserts in a batched fashion... who thought this was a good idea again?
 // lmao idc
+use std::fmt::Debug;
 use std::hash::Hash;
 use crate::graph::{EdgeChange,Graph,GraphErr};
 use lazy_static::lazy_static;
@@ -10,12 +11,12 @@ lazy_static! {
     static ref FLUSH_LOG_AT: usize = env!("FLUSH_LOG_AT").parse::<usize>().unwrap();
 }
 
-struct GraphOne<Id: Clone + Eq + Hash> {
+struct GraphOne<Id: Clone + Debug + Eq + Hash> {
     log: Vec<(Id, Id)>,
     csr: ()
 }
 
-impl<Id: Clone + Eq + Hash> Graph<Id> for GraphOne<Id> {
+impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for GraphOne<Id> {
     fn new() -> Self {
         Self {
             log: vec!(),
@@ -57,5 +58,9 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for GraphOne<Id> {
     
     fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
         Err(GraphErr::NoSuchNode)
+    }
+
+    fn debug(&self) {
+        ()
     }
 }

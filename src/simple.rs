@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::sync::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -5,7 +6,7 @@ use std::hash::Hash;
 use crate::graph::{EdgeChange,GraphErr,Graph};
 
 
-pub struct SimpleGraph<Id: Clone + Eq + Hash> {
+pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
 
     vertex_counter: usize,
     edge_counter: usize,
@@ -17,7 +18,7 @@ pub struct SimpleGraph<Id: Clone + Eq + Hash> {
 }
 
 
-impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
+impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
     fn new() -> Self {
         Self { 
             vertex_counter: 0,
@@ -259,5 +260,9 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
                 Err(GraphErr::NoSuchEdge)
             }
         }
+    }
+
+    fn debug(&self) {
+        ()
     }
 }

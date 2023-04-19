@@ -1,5 +1,7 @@
+use std::fmt::Debug;
 use std::hash::Hash;
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum GraphErr {
     NoSuchNode,
     NoSuchEdge,
@@ -12,9 +14,9 @@ pub enum EdgeChange {
     Added,
 }
 
-pub trait Graph<Id: Clone + Eq + Hash> {
+pub trait Graph<Id: Clone + Debug + Eq + Hash> {
     fn new() -> Self;
-
+    
     // returns (V, E)
     fn get_size(&self) -> (usize, usize);
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr>;
@@ -29,4 +31,6 @@ pub trait Graph<Id: Clone + Eq + Hash> {
     
     fn add_node(&mut self, id: Id) -> Result<(), GraphErr>;
     fn remove_node(&mut self, id: Id) -> Result<(), GraphErr>;
+
+    fn debug(&self);
 }

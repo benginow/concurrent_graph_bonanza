@@ -1,4 +1,5 @@
 use std::sync::RwLock;
+use std::fmt::Debug;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::hash::Hash;
@@ -30,12 +31,14 @@ impl CoarseCSR {
         
         if !is_update {
             // add edge
+            println!("adding edge {} {} {} :D", from, to, weight);
             let (off_start, off_end) = self.get_offsets(from);
+            println!("offsets are {} {}", off_start, off_end);
             let new_edge = (to, weight);
 
             // insert edge into edge list
             // TODO this could be a more effective data structure 🤪 don't use linear search?
-            for i in off_start..off_end {
+            for i in off_start..=off_end {
                 if i == e {
                     self.edges.push(new_edge);
                     break;
@@ -46,11 +49,13 @@ impl CoarseCSR {
                     break;
                 }
             }
-
+            
             // shift offsets
             for i in (from + 1)..v {
                 self.offsets[i] += 1;
             }
+
+            println!("done! we are now {:?} :3", self); 
         } else {
             let (off_start, off_end) = self.get_offsets(from);
 
@@ -206,14 +211,18 @@ impl Graph<usize> for CoarseCSR {
             Ok(())
         }
     }
+
+    fn debug(&self) {
+        println!("{:?}", self);
+    }
 }
 
-pub struct CoarseCSRGraph<Id: Clone + Eq + Hash> {
+pub struct CoarseCSRGraph<Id: Clone + Debug + Eq + Hash> {
     csr: Arc<RwLock<CoarseCSR>>,
     internal_ids: Arc<RwLock<HashMap<Id, usize>>>,
 }
 
-impl<Id: Clone + Eq + Hash> CoarseCSRGraph<Id> {
+impl<Id: Clone + Debug + Eq + Hash> CoarseCSRGraph<Id> {
     fn get_id(&self, id_: &Id) -> Result<usize, GraphErr> {
         let map = self.internal_ids.read().unwrap();
         
@@ -235,7 +244,7 @@ impl<Id: Clone + Eq + Hash> CoarseCSRGraph<Id> {
     }
 }
 
-impl<Id: Clone + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
+impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
     fn new() -> Self {
         Self {
             csr: Arc::new(RwLock::new(CoarseCSR::new())),
@@ -338,5 +347,17 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
                 Err(GraphErr::NodeAlreadyExists)
             }
         }
+    }
+
+    fn debug(&self) {
+        let map = self.internal_ids.read().unwrap();
+        println!("map:");
+        for (k, v) in map.iter() {
+            println!("{:?} -> {:?}", k, v);
+        }
+
+        let csr = self.csr.read().unwrap();
+        println!("csr:");
+        println!("{:?}", csr);
     }
 }
