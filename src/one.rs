@@ -4,23 +4,29 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 use crate::graph::{EdgeChange,Graph,GraphErr};
+use std::sync::{Arc,RwLock};
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 
 lazy_static! {
     static ref LOG_SIZE: usize = env!("LOG_SIZE").parse::<usize>().unwrap();
     static ref FLUSH_LOG_AT: usize = env!("FLUSH_LOG_AT").parse::<usize>().unwrap();
 }
 
-struct GraphOne<Id: Clone + Debug + Eq + Hash> {
-    log: Vec<(Id, Id)>,
-    csr: ()
+#[derive(Debug)]
+pub struct LogAndAdjList {
+    log: Vec<(usize, usize, f64)>,
+    adj_list: Vec<Vec<(usize, f64)>>
 }
 
-impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for GraphOne<Id> {
+struct CoarseGraphOne<Id: Clone + Debug + Eq + Hash> {
+    internal_ids: Arc<RwLock<HashMap<Id, usize>>>
+}
+
+impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     fn new() -> Self {
         Self {
-            log: vec!(),
-            csr: ()
+            internal_ids: Arc::new(RwLock::new(HashMap::new()))
         }
     }
 

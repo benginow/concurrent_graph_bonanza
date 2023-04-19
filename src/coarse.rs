@@ -1,12 +1,11 @@
-use std::sync::RwLock;
 use std::fmt::Debug;
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc,RwLock};
 use std::hash::Hash;
+use std::collections::HashMap;
 use crate::graph::{GraphErr,EdgeChange,Graph};
 
 #[derive(Debug)]
-struct CoarseCSR {
+pub struct CoarseCSR {
     offsets: Vec<usize>,
     edges: Vec<(usize, f64)>,
 }
