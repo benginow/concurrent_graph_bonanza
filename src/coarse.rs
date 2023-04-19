@@ -111,6 +111,14 @@ impl Graph<usize> for CoarseCSR {
         Err(GraphErr::NoSuchNode)
     }
 
+    fn get_node_label(&self, id: usize) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+
+    fn set_node_label(&self, id: usize, label: f64) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+    
     fn add_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<(), GraphErr> {
         match self.get_edge(from, to) {
             Ok(_) => Err(GraphErr::EdgeAlreadyExists),
@@ -271,6 +279,14 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         Err(GraphErr::NoSuchNode)
     }
 
+    fn get_node_label(&self, id: Id) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+
+    fn set_node_label(&self, id: Id, label: f64) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+    
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {

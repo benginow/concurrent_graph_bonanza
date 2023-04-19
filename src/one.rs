@@ -36,6 +36,14 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for GraphOne<Id> {
         Err(GraphErr::NoSuchNode)
     }
 
+    fn get_node_label(&self, id: Id) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+
+    fn set_node_label(&self, id: Id, label: f64) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+    
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
         Err(GraphErr::EdgeAlreadyExists)
     }
