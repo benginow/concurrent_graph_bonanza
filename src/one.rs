@@ -83,6 +83,14 @@ impl Graph<usize> for CoarseLogList {
         }
     }
 
+    fn get_nodes(&self) -> Vec<usize> {
+        (0..self.adj_list.read().unwrap().len()).collect()
+    }
+    
+    fn get_edges(&self) -> Vec<(usize, usize, f64)> {
+        vec!()
+    }
+
     fn get_neighbors(&self, id: usize) -> Result<Vec<usize>, GraphErr> {
         // TODO
         let list = self.adj_list.read().unwrap();
@@ -200,6 +208,14 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
         Err(GraphErr::NoSuchEdge)
+    }
+
+    fn get_nodes(&self) -> Vec<Id> {
+        vec!()
+    }
+    
+    fn get_edges(&self) -> Vec<(Id, Id, f64)> {
+        vec!()
     }
 
     fn get_neighbors(&self, id: Id) -> Result<Vec<Id>, GraphErr> {

@@ -102,6 +102,24 @@ impl Graph<usize> for CoarseCSR {
         }
     }
 
+    fn get_nodes(&self) -> Vec<usize> {
+        (0..self.offsets.len()).collect()
+    }
+    
+    fn get_edges(&self) -> Vec<(usize, usize, f64)> {
+        let mut ret = vec!();
+        let (v, e) = self.get_size();
+        for i in 0..v {
+            let (off_start, off_end) = self.get_offsets(i);
+            for j in off_start..off_end {
+                let edge = self.edges[j];
+                ret.push((i, edge.0, edge.1));
+            }
+        }
+        
+        ret
+    }
+    
     fn get_neighbors(&self, id: usize) -> Result<Vec<usize>, GraphErr> {
         Err(GraphErr::NoSuchNode)
     }
@@ -276,6 +294,27 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
             },
             Err(e) => Err(e)
         }
+    }
+
+    fn get_nodes(&self) -> Vec<Id> {
+        vec!()
+    }
+    
+    fn get_edges(&self) -> Vec<(Id, Id, f64)> {
+        /*
+        let csr = self.csr.read().unwrap();
+        let map = self.internal_ids.read().unwrap();
+        let csr_edges = csr.get_edges();
+        csr_edges
+            .into_iter()
+            .map(
+                |(from_, to_, weight)| {
+                    (map.get(from_).unwrap().clone(), map.get(to_).unwrap().clone(), weight)
+                }
+            )
+            .collect()
+        */
+        vec!()
     }
 
     fn get_neighbors(&self, id: Id) -> Result<Vec<Id>, GraphErr> {

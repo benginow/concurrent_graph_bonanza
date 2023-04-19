@@ -6,14 +6,13 @@ use crate::graph::Graph;
 use crate::coarse::CoarseCSRGraph;
 use crate::graph::GraphErr;
 
-
 #[test]
 fn test_simple() {
     let mut g: SimpleGraph<usize> = SimpleGraph::new();
     make_sure_graph_works(g);
 }
 
-// #[test]
+#[test]
 fn test_coarse() {
     let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
     make_sure_graph_works(g);
@@ -26,37 +25,27 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     for i in 0..5 {
         val = g.add_node(i);
         assert!(val.is_ok());
-        print!("hi");
     }
     
     // don't allow for duplicate entries.
     val = g.add_node(3);
     assert!(val.is_err());
     
-    print!("hi");
-
     // make sure size is correct
-    println!("{0:?}", g.get_size());
     assert!(g.get_size() == (5, 0));
-    print!("hi");
     
     // make sure double removal is not a thing
     val = g.remove_node(3);
     assert!(val.is_ok());
     assert!(g.get_size() == (4, 0));
-    g.debug();
     val = g.remove_node(3);
     assert!(val.is_err());
     assert!(g.get_size() == (4, 0));
-    g.debug();
 
     let mut nedges = 0;
     for i in 0..5 {
         for j in 0..5 {
-            println!("add edge {} {} {}", i, j, 1.0);
             val = g.add_edge(i,j,1.0);
-            g.debug();
-            println!("result is {:?}", val);
             if i != 3 && j != 3 {
                 assert!(val.is_ok());
                 nedges += 1;

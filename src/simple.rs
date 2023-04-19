@@ -124,6 +124,14 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         }
     }
 
+    fn get_nodes(&self) -> Vec<Id> {
+        vec!()
+    }
+    
+    fn get_edges(&self) -> Vec<(Id, Id, f64)> {
+        vec!()
+    }
+
     fn get_neighbors(&self, id: Id) -> Result<Vec<Id>, GraphErr> {
         // get id
         let read_map = self.map.read().unwrap();
