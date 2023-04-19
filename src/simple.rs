@@ -4,12 +4,17 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::hash::Hash;
 use crate::graph::{EdgeChange,GraphErr,Graph};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+// things that can be done!
+// change orderings and see how this affects timings
+
 
 
 pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
 
-    vertex_counter: usize,
-    edge_counter: usize,
+    vertex_counter: AtomicUsize,
+    edge_counter: AtomicUsize,
     // map from user's id to our id
     map: RwLock<HashMap<Id, usize>>,
     // need to update this every time a node is added!
@@ -23,9 +28,10 @@ pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
 
 impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     fn new() -> Self {
+        println!("making graph");
         Self { 
-            vertex_counter: 0,
-            edge_counter: 0,
+            vertex_counter: AtomicUsize::new(0),
+            edge_counter: AtomicUsize::new(0),
             map: RwLock::new(HashMap::new()),
             id_to_value: RwLock::new(HashMap::new()),
             graph: Arc::new(RwLock::new(vec![])),
@@ -41,14 +47,16 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         match from_id {
             Some(id) => {
                 let mut read_labels = self.labels.read().unwrap();
-                let label = read_labels.get(&of);
-                let mut write_labels = self.labels.write().unwrap();
-                write_labels.insert(of, lbl);
-                match label {
+                let label = read_labels.get(&of).clone();
+                let retval = match label {
                     Some(l) => return Ok(*l),
                     // no need to update until later when it matters
                     None => Ok(0.0),
-                }
+                };
+                drop(read_labels);
+                let mut write_labels = self.labels.write().unwrap();
+                write_labels.insert(of, lbl);
+                return retval;
             }  
             None => {
                 return Err(GraphErr::NoSuchNode);
@@ -78,7 +86,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     }
 
     fn get_size(&self) -> (usize, usize) {
-        return (self.vertex_counter, self.edge_counter);
+        return (self.vertex_counter.load(Ordering::SeqCst), self.edge_counter.load(Ordering::SeqCst));
     }
 
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
@@ -155,6 +163,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                         }
                         
                         self.graph.read().unwrap()[*from_id].write().unwrap().push((*to, weight));
+                        self.vertex_counter.fetch_add(1, Ordering::SeqCst);
                         Ok(())
                     }
                     None => {
@@ -178,13 +187,19 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                 match to_id {
                     Some(to) => {
                         // now, add to the graph if and only if that edge doesnt already exist in the map
-                        let read_g = self.graph.read().unwrap();
-                        let read_graph = read_g[*from_id].read().unwrap();
-                        let idx = read_graph.iter().enumerate().find(|(id, _)| id == to);
+                        let mut read_g = self.graph.read().unwrap();
+                        let mut read_graph = read_g[*from_id].write().unwrap();
+                        // let idx = read_graph.iter().enumerate().find(|(id, _)| id == to);
+                        let idx = read_graph.iter().position(|(id, _)| id == to);
+
                         match idx {
                             Some (x) => {
-                                self.graph.read().unwrap()[*from_id].write().unwrap().remove(x.0);
-                                Ok(x.1.1)
+                                // self.graph.read().unwrap()[*from_id].write().unwrap().remove(x.0);
+                                let edge_info = read_graph[x];
+                                read_graph.remove(x);
+                                Ok(edge_info.1)
+                                // read_graph.remove(x.0);
+                                // Ok(x.1.1)
                             }
                             None => {
                                 Err(GraphErr::NoSuchEdge)
@@ -201,6 +216,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
             }
         }
     }
+
 
     fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
         let read_map = self.map.read().unwrap();
@@ -275,20 +291,24 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     fn add_node(&mut self, id: Id) -> Result<(), GraphErr> {
         let read_map = self.map.read().unwrap();
         let read_id = read_map.get(&id);
+        
+        print!("we have read the thing");
 
         match read_id {
             Some(_) => {
-                Err(GraphErr::NodeAlreadyExists)
+                return Err(GraphErr::NodeAlreadyExists);
             }
-            None => {
-                let mut writing = self.graph.write().unwrap();
+            None => ()
+        }
+
+        drop(read_map);
+
+        let mut writing = self.graph.write().unwrap();
                 writing.push(Arc::new(RwLock::new(vec![])));
                 let length = writing.len();
                 self.map.write().unwrap().insert(id, length);
                 self.id_to_value.write().unwrap().insert(length, id);
                 Ok(())
-            }
-        }
 
     }
 
@@ -312,9 +332,11 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                     
                     for (idx, val) in row.enumerate() {
                         if val.0 == *read_id {
-                            remove_index = Some(idx);
+                            remove_index = Some(idx.clone());
                         }
                     }
+                    // drop(row);
+                    drop(row_placeholder);
                     match remove_index {
                         Some(i) => {
                             let mut write_row = r.write().unwrap();

@@ -9,8 +9,8 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 
 lazy_static! {
-    static ref LOG_SIZE: usize = env!("LOG_SIZE").parse::<usize>().unwrap();
-    static ref FLUSH_LOG_AT: usize = env!("FLUSH_LOG_AT").parse::<usize>().unwrap();
+    // static ref LOG_SIZE: usize = env!("LOG_SIZE").parse::<usize>().unwrap();
+    // static ref FLUSH_LOG_AT: usize = env!("FLUSH_LOG_AT").parse::<usize>().unwrap();
 }
 
 #[derive(Debug)]
