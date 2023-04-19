@@ -16,11 +16,12 @@ pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
     id_to_value: RwLock<HashMap<usize, Id>>,
     // index and weight
     graph: Arc<RwLock<Vec<Arc<RwLock<Vec<(usize, f64)>>>>>>,
-    // parents: RwLock<HashMap<Id,usize>>
+    // labels -> id to 
+    labels: RwLock<HashMap<Id, f64>>,
 }
 
 
-impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
+impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     fn new() -> Self {
         Self { 
             vertex_counter: 0,
@@ -28,8 +29,52 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
             map: RwLock::new(HashMap::new()),
             id_to_value: RwLock::new(HashMap::new()),
             graph: Arc::new(RwLock::new(vec![])),
+            labels: RwLock::new(HashMap::new()),
             // this is a list of all parent nodes
         }
+    }
+
+    // if node is not labeled, it returns 0
+    fn set_node_label(&self, of: Id, lbl: f64) -> Result<f64, GraphErr> {
+        let read_map = self.map.read().unwrap();
+        let from_id = read_map.get(&of);
+        match from_id {
+            Some(id) => {
+                let mut read_labels = self.labels.read().unwrap();
+                let label = read_labels.get(&of);
+                let mut write_labels = self.labels.write().unwrap();
+                write_labels.insert(of, lbl);
+                match label {
+                    Some(l) => return Ok(*l),
+                    // no need to update until later when it matters
+                    None => Ok(0.0),
+                }
+            }  
+            None => {
+                return Err(GraphErr::NoSuchNode);
+            }
+        }
+    }
+
+    fn get_node_label(&self, of: Id) -> Result<f64, GraphErr> {
+        let read_map = self.map.read().unwrap();
+        let from_id = read_map.get(&of);
+        match from_id {
+            Some(id) => {
+                let read_labels = self.labels.read().unwrap();
+                let label = read_labels.get(&of);
+                match label {
+                    Some(l) => return Ok(*l),
+                    // no need to update until later when it matters
+                    None => Ok(0.0),
+                }
+
+            }
+            None => {
+                return Err(GraphErr::NoSuchNode);
+            }
+        }
+
     }
 
     fn get_size(&self) -> (usize, usize) {
@@ -81,28 +126,15 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
                 let read_graph = self.graph.read().unwrap();
                 // [id].read().unwrap();
                 let row = read_graph[*id].read().unwrap();
-                let copied: Vec<usize> = read_graph[*id].read().unwrap().clone().iter().map(|&(s, _)| s).collect();
-                let ids: Vec<Id> = copied.iter().map(|&s| *self.id_to_value.read().unwrap().get(&s).unwrap()).collect();
-                // return Ok(cp);
-                // PLACEHOLDER
+                let copied = row.clone();
+                let collected: Vec<usize> = copied.iter().map(|&(s, _)| s).collect();
+                let ids: Vec<Id> = collected.iter().map(|&s| *self.id_to_value.read().unwrap().get(&s).unwrap()).collect();
                 return Ok(ids);
             }
             None => {
                 return Err(GraphErr::NoSuchNode);
             }
         }
-
-        //return a copy of the vector :3
-        
-
-    }
-
-    fn get_node_label(&self, id: Id) -> Result<f64, GraphErr> {
-        Err(GraphErr::NoSuchNode)
-    }
-
-    fn set_node_label(&self, id: Id, label: f64) -> Result<f64, GraphErr> {
-        Err(GraphErr::NoSuchNode)
     }
     
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
@@ -137,7 +169,6 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
     }
 
     fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
-        
         let read_map = self.map.read().unwrap();
         // get ids first
         let from_id = read_map.get(&from);
