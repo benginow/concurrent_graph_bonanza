@@ -7,8 +7,8 @@ use crate::graph::{EdgeChange,Graph,GraphErr};
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref LOG_SIZE: usize = env!("LOG_SIZE").parse::<usize>().unwrap();
-    static ref FLUSH_LOG_AT: usize = env!("FLUSH_LOG_AT").parse::<usize>().unwrap();
+    // static ref LOG_SIZE: usize = env!("LOG_SIZE").parse::<usize>().unwrap();
+    // static ref FLUSH_LOG_AT: usize = env!("FLUSH_LOG_AT").parse::<usize>().unwrap();
 }
 
 struct GraphOne<Id: Clone + Debug + Eq + Hash> {
