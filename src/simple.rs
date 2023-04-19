@@ -15,7 +15,8 @@ pub struct SimpleGraph<Id: Clone + Eq + Hash> {
     id_to_value: RwLock<HashMap<usize, Id>>,
     // index and weight
     graph: Arc<RwLock<Vec<Arc<RwLock<Vec<(usize, f64)>>>>>>,
-    // parents: RwLock<HashMap<Id,usize>>
+    // labels -> id to 
+    labels: RwLock<HashMap<Id, f64>>,
 }
 
 
@@ -29,6 +30,48 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
             graph: Arc::new(RwLock::new(vec![])),
             // this is a list of all parent nodes
         }
+    }
+
+    // if node is not labeled, it returns 0
+    fn set_node_label(&self, of: Id, lbl: f64) -> Result<f64, GraphErr> {
+        let read_map = self.map.read().unwrap();
+        let from_id = read_map.get(&of);
+        match from_id {
+            Some(id) => {
+                let mut write_labels = self.labels.write().unwrap();
+                let label = write_labels.get(&of);
+                write_labels.insert(of, lbl);
+                match label {
+                    Some(l) => return Ok(*l),
+                    // no need to update until later when it matters
+                    None => Ok(0.0),
+                }
+            }  
+            None => {
+                return Err(GraphErr::NoSuchNode);
+            }
+        }
+    }
+
+    fn get_node_label(&self, of: Id) -> Result<f64, GraphErr> {
+        let read_map = self.map.read().unwrap();
+        let from_id = read_map.get(&of);
+        match from_id {
+            Some(id) => {
+                let read_labels = self.labels.read().unwrap();
+                let label = read_labels.get(&of);
+                match label {
+                    Some(l) => return Ok(*l),
+                    // no need to update until later when it matters
+                    None => Ok(0.0),
+                }
+
+            }
+            None => {
+                return Err(GraphErr::NoSuchNode);
+            }
+        }
+
     }
 
     fn get_neighbors(&self, of: Id) -> Result<Vec<Id>, GraphErr> {
@@ -128,7 +171,6 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for SimpleGraph<Id> {
     }
 
     fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
-        
         let read_map = self.map.read().unwrap();
         // get ids first
         let from_id = read_map.get(&from);

@@ -1,6 +1,7 @@
 pub mod graph;
 pub mod simple;
 pub mod coarse;
+pub mod sssp;
 
 use std::fs;
 
@@ -16,7 +17,8 @@ fn main() {
 }
 
 fn SSSP<G: Graph<usize>>(mut g: G){
-    
+    // chaotic relaxation
+
 }
 
 #[cfg(test)]

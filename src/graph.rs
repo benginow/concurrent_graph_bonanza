@@ -20,6 +20,7 @@ pub trait Graph<Id: Clone + Eq + Hash> {
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr>;
 
     // label being f64 is kind of arbitrary here -- returns old node label
+    // theoretically nodes can store other data -- don't worry about that for now.
     fn set_node_label(&self, of: Id, label: f64) -> Result<f64, GraphErr>;
     fn get_node_label(&self, of: Id) -> Result<f64, GraphErr>;
 

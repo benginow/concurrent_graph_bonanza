@@ -5,7 +5,7 @@ use std::hash::Hash;
 use crate::graph::{GraphErr,EdgeChange,Graph};
 
 #[derive(Debug)]
-pub struct CoarseCSR {
+struct CoarseCSR {
     offsets: Vec<usize>,
     edges: Vec<(usize, f64)>,
 }
