@@ -25,14 +25,12 @@ impl CoarseCSR {
     }
 
     // assumes that the nodes exist--i love helper functions!
-    fn internal_update_or_add_edge(&mut self, from: usize, to: usize, weight: f64, is_update: bool) {
+    fn intern_update_or_add_edge(&mut self, from: usize, to: usize, weight: f64, is_update: bool) {
         let (v, e) = self.get_size();
         
         if !is_update {
             // add edge
-            println!("adding edge {} {} {} :D", from, to, weight);
             let (off_start, off_end) = self.get_offsets(from);
-            println!("offsets are {} {}", off_start, off_end);
             let new_edge = (to, weight);
 
             // insert edge into edge list
@@ -53,8 +51,6 @@ impl CoarseCSR {
             for i in (from + 1)..v {
                 self.offsets[i] += 1;
             }
-
-            println!("done! we are now {:?} :3", self); 
         } else {
             let (off_start, off_end) = self.get_offsets(from);
 
@@ -124,7 +120,7 @@ impl Graph<usize> for CoarseCSR {
             Err(e) => match e {
                 GraphErr::NoSuchNode => Err(e),
                 _ => {
-                    self.internal_update_or_add_edge(from, to, weight, false);
+                    self.intern_update_or_add_edge(from, to, weight, false);
                     Ok(())
                 }
             }
@@ -160,7 +156,7 @@ impl Graph<usize> for CoarseCSR {
     fn update_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<f64, GraphErr> {
         match self.get_edge(from, to) {
             Ok(old_weight) => {
-                self.internal_update_or_add_edge(from, to, weight, true);
+                self.intern_update_or_add_edge(from, to, weight, true);
                 Ok(old_weight)
             },
             Err(e) => Err(e)
@@ -170,12 +166,12 @@ impl Graph<usize> for CoarseCSR {
     fn update_or_add_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<EdgeChange, GraphErr> {
         match self.get_edge(from, to) {
             Ok(old_weight) => {
-                self.internal_update_or_add_edge(from, to, weight, true);
+                self.intern_update_or_add_edge(from, to, weight, true);
                 Ok(EdgeChange::Updated(old_weight))
             },
             Err(e) => match e {
                 GraphErr::NoSuchEdge => {
-                    self.internal_update_or_add_edge(from, to, weight, true);
+                    self.intern_update_or_add_edge(from, to, weight, true);
                     Ok(EdgeChange::Added)
                 },
                 _ => Err(e),
@@ -205,7 +201,7 @@ impl Graph<usize> for CoarseCSR {
             // remove the node's edges
             let (off_start, off_end) = self.get_offsets(id);
             self.edges.drain(off_start..off_end);
-            
+
             // remove the node from the offset table
             self.offsets.remove(id);
 
@@ -213,6 +209,14 @@ impl Graph<usize> for CoarseCSR {
             let shift = off_end - off_start;
             for i in id..(v - 1) {
                 self.offsets[i] -= shift
+            }
+
+            // update EVERYTHING augh
+            let (v, e) = self.get_size();
+            let mut new_offsets: Vec<usize> = vec!();
+            let mut new_edges: Vec<usize> = vec!();
+            for i in 0..e {
+                // TODO
             }
             
             Ok(())
