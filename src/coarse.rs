@@ -1,4 +1,5 @@
 use std::sync::RwLock;
+use std::fmt::Debug;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::hash::Hash;
@@ -30,12 +31,14 @@ impl CoarseCSR {
         
         if !is_update {
             // add edge
+            println!("adding edge {} {} {} :D", from, to, weight);
             let (off_start, off_end) = self.get_offsets(from);
+            println!("offsets are {} {}", off_start, off_end);
             let new_edge = (to, weight);
 
             // insert edge into edge list
             // TODO this could be a more effective data structure 🤪 don't use linear search?
-            for i in off_start..off_end {
+            for i in off_start..=off_end {
                 if i == e {
                     self.edges.push(new_edge);
                     break;
@@ -46,11 +49,13 @@ impl CoarseCSR {
                     break;
                 }
             }
-
+            
             // shift offsets
             for i in (from + 1)..v {
                 self.offsets[i] += 1;
             }
+
+            println!("done! we are now {:?} :3", self); 
         } else {
             let (off_start, off_end) = self.get_offsets(from);
 
@@ -102,6 +107,18 @@ impl Graph<usize> for CoarseCSR {
         }
     }
 
+    fn get_neighbors(&self, id: usize) -> Result<Vec<usize>, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+
+    fn get_node_label(&self, id: usize) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+
+    fn set_node_label(&self, id: usize, label: f64) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+    
     fn add_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<(), GraphErr> {
         match self.get_edge(from, to) {
             Ok(_) => Err(GraphErr::EdgeAlreadyExists),
@@ -202,14 +219,18 @@ impl Graph<usize> for CoarseCSR {
             Ok(())
         }
     }
+
+    fn debug(&self) {
+        println!("{:?}", self);
+    }
 }
 
-struct CoarseCSRGraph<Id: Clone + Eq + Hash> {
+pub struct CoarseCSRGraph<Id: Clone + Debug + Eq + Hash> {
     csr: Arc<RwLock<CoarseCSR>>,
     internal_ids: Arc<RwLock<HashMap<Id, usize>>>,
 }
 
-impl<Id: Clone + Eq + Hash> CoarseCSRGraph<Id> {
+impl<Id: Clone + Debug + Eq + Hash> CoarseCSRGraph<Id> {
     fn get_id(&self, id_: &Id) -> Result<usize, GraphErr> {
         let map = self.internal_ids.read().unwrap();
         
@@ -231,7 +252,7 @@ impl<Id: Clone + Eq + Hash> CoarseCSRGraph<Id> {
     }
 }
 
-impl<Id: Clone + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
+impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
     fn new() -> Self {
         Self {
             csr: Arc::new(RwLock::new(CoarseCSR::new())),
@@ -254,6 +275,18 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         }
     }
 
+    fn get_neighbors(&self, id: Id) -> Result<Vec<Id>, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+
+    fn get_node_label(&self, id: Id) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+
+    fn set_node_label(&self, id: Id, label: f64) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+    
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
@@ -330,5 +363,17 @@ impl<Id: Clone + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
                 Err(GraphErr::NodeAlreadyExists)
             }
         }
+    }
+
+    fn debug(&self) {
+        let map = self.internal_ids.read().unwrap();
+        println!("map:");
+        for (k, v) in map.iter() {
+            println!("{:?} -> {:?}", k, v);
+        }
+
+        let csr = self.csr.read().unwrap();
+        println!("csr:");
+        println!("{:?}", csr);
     }
 }

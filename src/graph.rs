@@ -1,5 +1,7 @@
+use std::fmt::Debug;
 use std::hash::Hash;
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum GraphErr {
     NoSuchNode,
     NoSuchEdge,
@@ -12,19 +14,17 @@ pub enum EdgeChange {
     Added,
 }
 
-pub trait Graph<Id: Clone + Eq + Hash> {
+pub trait Graph<Id: Clone + Debug + Eq + Hash> {
     fn new() -> Self;
-
+    
     // returns (V, E)
     fn get_size(&self) -> (usize, usize);
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr>;
+    fn get_neighbors(&self, of: Id) -> Result<Vec<Id>, GraphErr>;
 
     // label being f64 is kind of arbitrary here -- returns old node label
-    // theoretically nodes can store other data -- don't worry about that for now.
-    fn set_node_label(&self, of: Id, label: f64) -> Result<f64, GraphErr>;
-    fn get_node_label(&self, of: Id) -> Result<f64, GraphErr>;
-
-    fn get_neighbors(&self, of: Id) -> Result<Vec<Id>, GraphErr>;
+    fn get_node_label(&self, id: Id) -> Result<f64, GraphErr>;
+    fn set_node_label(&self, id: Id, label: f64) -> Result<f64, GraphErr>;
 
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr>;
     // returns old edge weight
@@ -35,4 +35,6 @@ pub trait Graph<Id: Clone + Eq + Hash> {
     
     fn add_node(&mut self, id: Id) -> Result<(), GraphErr>;
     fn remove_node(&mut self, id: Id) -> Result<(), GraphErr>;
+
+    fn debug(&self);
 }
