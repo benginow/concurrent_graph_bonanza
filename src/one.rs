@@ -9,6 +9,7 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicPtr;
 use std::marker::{Send,Sync};
+use std::cell::Cell;
 
 #[derive(Debug)]
 pub struct CoarseLogList {
@@ -175,8 +176,7 @@ impl CoarseLogList {
 }
 
 pub struct CoarseGraphOne<Id: Clone + Debug + Eq + Hash> {
-    // log_list: Arc<CoarseLogList>,
-    log_list: CoarseLogList,
+    log_list: Cell<CoarseLogList>,
     internal_ids: Arc<RwLock<HashMap<Id, usize>>>
 }
 
@@ -206,19 +206,19 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     fn new() -> Self {
         Self {
             // log_list: Arc::new(CoarseLogList::new(100)),
-            log_list: CoarseLogList::new(100),
+            log_list: Cell::new(CoarseLogList::new(100)),
             internal_ids: Arc::new(RwLock::new(HashMap::new()))
         }
     }
 
     fn get_size(&self) -> (usize, usize) {
-        self.log_list.get_size()
+        self.log_list.get_mut().get_size()
     }
     
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
-                self.log_list.get_edge(f_, t_)
+                self.log_list.get_mut().get_edge(f_, t_)
             },
             Err(e) => Err(e)
         }
@@ -244,38 +244,38 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
         Err(GraphErr::NoSuchNode)
     }
     
-    fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
+    fn add_edge(&self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
-                self.log_list.add_edge(f_, t_, weight)
+                self.log_list.get_mut().add_edge(f_, t_, weight)
             },
             Err(e) => Err(e)
         }
     }
 
-    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
+    fn remove_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
         Err(GraphErr::NoSuchEdge)
     }
     
-    fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
+    fn update_edge(&self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
-                self.log_list.update_edge(f_, t_, weight)
+                self.log_list.get_mut().update_edge(f_, t_, weight)
             },
             Err(e) => Err(e)
         }
     }
 
-    fn update_or_add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
+    fn update_or_add_edge(&self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
-                self.log_list.update_or_add_edge(f_, t_, weight)
+                self.log_list.get_mut().update_or_add_edge(f_, t_, weight)
             },
             Err(e) => Err(e)
         }
     }
     
-    fn add_node(&mut self, id: Id) -> Result<(), GraphErr> {
+    fn add_node(&self, id: Id) -> Result<(), GraphErr> {
         match self.get_id(&id) {
             Ok(_) => {
                 Err(GraphErr::NodeAlreadyExists)
@@ -286,12 +286,12 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
                 let (v, _) = self.get_size();
                 
                 ids.insert(id, v);
-                self.log_list.add_node(v)
+                self.log_list.get_mut().add_node(v)
             }
         }
     }
 
-    fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
+    fn remove_node(&self, id: Id) -> Result<(), GraphErr> {
         Err(GraphErr::NoSuchNode)
     }
     
