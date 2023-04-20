@@ -187,8 +187,17 @@ impl Graph<usize> for CoarseCSR {
     fn debug(&self) {
         println!("{:?}", self);
     }
+
+    fn remove_edge(&mut self, from: usize, to: usize) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchEdge)
+    }
+
+    fn remove_node(&mut self, id: usize) -> Result<(), GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
 }
 
+/*
 impl CoarseCSR {
     fn remove_edge(&mut self, from: usize, to: usize) -> Result<f64, GraphErr> {
         match self.get_edge(from, to) {
@@ -247,6 +256,7 @@ impl CoarseCSR {
         }
     }
 }
+*/
 
 pub struct CoarseCSRGraph<Id: Clone + Debug + Eq + Hash> {
     csr: Arc<RwLock<CoarseCSR>>,
@@ -389,8 +399,17 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         println!("csr:");
         println!("{:?}", csr);
     }
+
+    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
+        Err(GraphErr::NoSuchEdge)
+    }
+
+    fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
 }
 
+/*
 impl<Id: Clone + Debug + Eq + Hash> CoarseCSRGraph<Id> {
     fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
         match self.get_ids(&from, &to) {
@@ -423,3 +442,4 @@ impl<Id: Clone + Debug + Eq + Hash> CoarseCSRGraph<Id> {
         }
     }
 }
+*/

@@ -8,36 +8,31 @@ use std::sync::{Arc,RwLock,RwLockWriteGuard,atomic::{AtomicUsize, Ordering}};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-lazy_static! {
-    // static ref LOG_SIZE: usize = env!("LOG_SIZE").parse::<usize>().unwrap();
-    // static ref FLUSH_LOG_AT: usize = env!("FLUSH_LOG_AT").parse::<usize>().unwrap();
-}
-
 #[derive(Debug)]
 pub struct CoarseLogList {
     log: RwLock<Vec<(usize, usize, f64, bool)>>,
     adj_list: RwLock<Vec<Vec<(usize, f64)>>>,
-    e: AtomicUsize
+    e: AtomicUsize,
+    log_size: usize,
 }
 
 impl CoarseLogList {
-    fn intern_update_edge() {
-
-    }
-
-    fn intern_add_edge() {
-        
-    }
-
-    fn flush (&mut self, log: RwLockWriteGuard<Vec<(usize, usize, f64, bool)>>) {
-        
-    }
-    
     fn intern_update_or_add_edge(&mut self, from: usize, to: usize, weight: f64, is_update: bool) {
-        let mut log = (&mut *self).log.write().unwrap();
-        /*
-        if log.len() == *FLUSH_LOG_AT {
-            self.flush(log);
+        let mut log = self.log.write().unwrap();
+        if log.len() == self.log_size {
+            let mut adj = self.adj_list.write().unwrap();
+            log.iter().map(|(f,t,w,u)| {
+                if *u {
+                    for (t_, w_) in adj[from].iter_mut() {
+                        if *t_ == *t {
+                            *w_ = *w;
+                            break;
+                        }
+                    }
+                } else {
+                    adj[from].push((*t, *w));
+                }
+            });
         } else {
             log.push(
                 (
@@ -47,17 +42,20 @@ impl CoarseLogList {
                     is_update
                 )
             );
+            if is_update {
+                self.e.fetch_add(1, Ordering::SeqCst);
+            }
         }
-        */
     }
 }
 
-impl Graph<usize> for CoarseLogList {
-    fn new() -> Self {
+impl CoarseLogList {
+    fn new(ls: usize) -> Self {
         Self {
-            log: RwLock::new(vec!()),
+            log: RwLock::new(vec!()), // TODO make this size ls
             adj_list: RwLock::new(vec!()),
-            e: AtomicUsize::new(0)
+            e: AtomicUsize::new(0),
+            log_size: ls,
         }
     }
 
@@ -108,16 +106,6 @@ impl Graph<usize> for CoarseLogList {
         } else {
             Err(GraphErr::NoSuchNode)
         }
-    }
-
-    fn get_node_label(&self, id: usize) -> Result<f64, GraphErr> {
-        // TODO
-        Ok(0.0)
-    }
-
-    fn set_node_label(&self, id: usize, label: f64) -> Result<f64, GraphErr> {
-        // TODO
-        Ok(0.0)
     }
 
     fn add_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<(), GraphErr> {
@@ -184,20 +172,47 @@ pub struct CoarseGraphOne<Id: Clone + Debug + Eq + Hash> {
     internal_ids: Arc<RwLock<HashMap<Id, usize>>>
 }
 
+impl<Id: Clone + Debug + Eq + Hash> CoarseGraphOne<Id> {
+    fn get_id(&self, id_: &Id) -> Result<usize, GraphErr> {
+        let map = self.internal_ids.read().unwrap();
+        
+        match map.get(id_) {
+            Some(id) => Ok(id.clone()),
+            _ => Err(GraphErr::NoSuchNode),
+        }
+    }
+
+    fn get_ids(&self, id0_: &Id, id1_: &Id) -> Result<(usize, usize), GraphErr> {
+        let map = self.internal_ids.read().unwrap();
+        
+        match (map.get(id0_), map.get(id1_)) {
+            (Some(id0), Some(id1)) => Ok((id0.clone(), id1.clone())),
+            _ => {
+                Err(GraphErr::NoSuchNode)
+            }
+        }
+    }
+}
+
 impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     fn new() -> Self {
         Self {
-            log_list: Arc::new(CoarseLogList::new()),
+            log_list: Arc::new(CoarseLogList::new(100)),
             internal_ids: Arc::new(RwLock::new(HashMap::new()))
         }
     }
 
     fn get_size(&self) -> (usize, usize) {
-        (0, 0)
+        self.log_list.get_size()
     }
     
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
-        Err(GraphErr::NoSuchEdge)
+        match self.get_ids(&from, &to) {
+            Ok((f_, t_)) => {
+                self.log_list.get_edge(f_, t_)
+            },
+            Err(e) => Err(e)
+        }
     }
 
     fn get_nodes(&self) -> Vec<Id> {
@@ -221,21 +236,56 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     }
     
     fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
-        Err(GraphErr::EdgeAlreadyExists)
+        match self.get_ids(&from, &to) {
+            Ok((f_, t_)) => {
+                self.log_list.add_edge(f_, t_, weight)
+            },
+            Err(e) => Err(e)
+        }
     }
 
-    fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
+    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
         Err(GraphErr::NoSuchEdge)
+    }
+    
+    fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
+        match self.get_ids(&from, &to) {
+            Ok((f_, t_)) => {
+                self.log_list.update_edge(f_, t_, weight)
+            },
+            Err(e) => Err(e)
+        }
     }
 
     fn update_or_add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
-        Err(GraphErr::NoSuchNode)
+        match self.get_ids(&from, &to) {
+            Ok((f_, t_)) => {
+                self.log_list.update_or_add_edge(f_, t_, weight)
+            },
+            Err(e) => Err(e)
+        }
     }
     
     fn add_node(&mut self, id: Id) -> Result<(), GraphErr> {
-        Err(GraphErr::NodeAlreadyExists)
+        match self.get_id(&id) {
+            Ok(_) => {
+                Err(GraphErr::NodeAlreadyExists)
+            },
+            _ => {
+                let mut ids = self.internal_ids.write().unwrap();
+
+                let (v, _) = self.get_size();
+                
+                ids.insert(id, v);
+                self.log_list.add_node(v)
+            }
+        }
     }
 
+    fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
+        Err(GraphErr::NoSuchNode)
+    }
+    
     fn debug(&self) {
         ()
     }
