@@ -31,11 +31,6 @@ fn test_coarse_seq() {
 
 
 // ________________________________________PARALLEL TESTS BEGIN HERE________________________________________
-#[test]
-fn test_simple_conc() {
-    let g: Arc<SimpleGraph<usize>> = Arc::new(SimpleGraph::new());
-    test_gen(g, &mut 10, &mut 10, &mut 0, &mut 0, &mut 2);
-}
 
 enum RequestType {
     AddNode(usize),
@@ -77,38 +72,57 @@ fn service<G: Graph<usize> + Send + Sync>(rx: Receiver<RequestType>, graph: Arc<
 }
 
 fn generate_request(num: usize, nodes_gen: &AtomicUsize) -> RequestType {
-    match num {
-        0 => {
-            let val = nodes_gen.fetch_add(1, Ordering::SeqCst);
-            RequestType::AddNode(val)
-        }
-        1 => {
-            let val = nodes_gen.fetch_add(0, Ordering::SeqCst);
-            let mut rng = rand::thread_rng();
-            let node1 = rng.gen_range(0..val);
-            let node2 = rng.gen_range(0..val);
-            RequestType::AddEdge(node1, node2)
-        }
-        2 => {
-            let val = nodes_gen.fetch_add(0, Ordering::SeqCst);
-            let mut rng = rand::thread_rng();
-            let node = rng.gen_range(0..val);
-            RequestType::RemoveNode(node)
+    let mut num = num.clone();
+    loop {
+        match num {
+            0 => {
+                let val = nodes_gen.fetch_add(1, Ordering::SeqCst);
+                // print!("{val}");
+                return RequestType::AddNode(val);
+            }
+            1 => {
+                let val = nodes_gen.load(Ordering::SeqCst);
+                if (val == 0) {
+                    num = 0;
+                    continue;
+                }
+                let mut rng = rand::thread_rng();
+                // print!("{val}");
+                let node1 = rng.gen_range(0..val);
+                let node2 = rng.gen_range(0..val);
+                return RequestType::AddEdge(node1, node2);
+            }
+            2 => {
+                let val = nodes_gen.load(Ordering::SeqCst);
+                if (val == 0) {
+                    num = 0;
+                    continue;
+                }
+                let mut rng = rand::thread_rng();
+                // print!("{val}");
+                let node = rng.gen_range(0..val);
+                return RequestType::RemoveNode(node);
+
+            }
+            _ => {
+                let val = nodes_gen.load(Ordering::SeqCst);
+                if (val == 0) {
+                    num = 0;
+                    continue;
+                }
+                // print!("{val}");
+                let mut rng = rand::thread_rng();
+                let node1 = rng.gen_range(0..val);
+                let node2 = rng.gen_range(0..val);
+                return RequestType::RemoveEdge(node1, node2);
+            }
 
         }
-        _ => {
-            let val = nodes_gen.fetch_add(0, Ordering::SeqCst);
-            let mut rng = rand::thread_rng();
-            let node1 = rng.gen_range(0..val);
-            let node2 = rng.gen_range(0..val);
-            RequestType::RemoveEdge(node1, node2)
-        }
-
-    }
+    }  
 }
 
 // graph must impl send and sync :)
-fn test_gen<G: Graph<usize> + Send + Sync>(graph: Arc<G>, nodes: &mut usize, edges: &mut usize, removed_nodes: &mut usize, removed_edges: &mut usize, num_threads: usize)
+fn test_gen<G: Graph<usize> + Send + Sync + 'static>(graph: Arc<G>, nodes: &mut usize, edges: &mut usize, removed_nodes: &mut usize, removed_edges: &mut usize, num_threads: usize)
 {
     // keep track of node ids, very very very roughly, ignoring removals to avoid memory overhead
     let nodes_generated = AtomicUsize::new(0);
@@ -136,28 +150,41 @@ fn test_gen<G: Graph<usize> + Send + Sync>(graph: Arc<G>, nodes: &mut usize, edg
         match req {
             RequestType::AddNode(_) => {
                 if (*nodes > 0){
-                    sender_list[curr_thread].send(req);
+                    let res = sender_list[curr_thread].send(req);
+                    if (res.is_err()){
+                        print!("oh shit!")
+                    }
                     *nodes = *nodes - 1;
                 }
             }
             RequestType::RemoveNode(_) => {
                 if (*removed_nodes > 0){
-                    sender_list[curr_thread].send(req);
+                    let res = sender_list[curr_thread].send(req);
+                    if (res.is_err()){
+                        print!("oh shit!")
+                    }
                     *removed_nodes = *removed_nodes - 1;
                 }
 
             }
             RequestType::AddEdge(_,_) => {
                 if (*edges > 0){
-                    sender_list[curr_thread].send(req);
+                    let res = sender_list[curr_thread].send(req);
+                    if (res.is_err()){
+                        print!("oh shit!")
+                    }
                     *edges = *edges - 1;
                 }
                 
             }
             RequestType::RemoveEdge(_,_) => {
                 if (*removed_edges > 0){
-                    sender_list[curr_thread].send(req);
+                    let res = sender_list[curr_thread].send(req);
+                    if (res.is_err()){
+                        print!("oh shit!")
+                    }
                     *removed_edges = *removed_edges - 1;
+                    
                 }
             }
             _ => ()
@@ -173,6 +200,12 @@ fn test_gen<G: Graph<usize> + Send + Sync>(graph: Arc<G>, nodes: &mut usize, edg
         handle.join();
     }
 
+}
+
+#[test]
+fn test_simple_conc() {
+    let g: Arc<SimpleGraph<usize>> = Arc::new(SimpleGraph::new());
+    test_gen(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 5);
 }
 
 // #[test]
