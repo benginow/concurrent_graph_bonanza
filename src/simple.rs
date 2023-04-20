@@ -9,7 +9,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 // things that can be done!
 // change orderings and see how this affects timings
 pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
-
     removed_vertex_counter: AtomicUsize,
     removed_edge_counter: AtomicUsize,
     vertex_counter: AtomicUsize,

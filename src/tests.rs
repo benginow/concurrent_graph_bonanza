@@ -1,7 +1,12 @@
 #[cfg(test)]
 
 use std::fs;
-// use crate::simple::SimpleGraph;
+use std::sync::mpsc::{channel, Sender, Receiver};
+use rand::Rng;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+
+use crate::simple::SimpleGraph;
 use crate::graph::Graph;
 use crate::coarse::CoarseCSRGraph;
 use crate::graph::GraphErr;
@@ -11,32 +16,177 @@ use std::thread::JoinHandle;
 use std::cell::Cell;
 use std::sync::Arc;
 
-/*
+
 #[test]
-fn test_simple() {
+fn test_simple_seq() {
     let mut g: SimpleGraph<usize> = SimpleGraph::new();
     make_sure_graph_works(g);
 }
-*/
 
 #[test]
-fn test_coarse() {
+fn test_coarse_seq() {
     let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
     make_sure_graph_works(g);
 }
 
+
+// ________________________________________PARALLEL TESTS BEGIN HERE________________________________________
 #[test]
-fn test_coarse_concurrent() {
-    let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
-    let a = Arc::new(g);
-    make_sure_graph_works_concurrent(a);
+fn test_simple_conc() {
+    let g: Arc<SimpleGraph<usize>> = Arc::new(SimpleGraph::new());
+    test_gen(g, &mut 10, &mut 10, &mut 0, &mut 0, &mut 2);
 }
 
-pub fn tcc() {
-    let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
-    let a = Arc::new(g);
-    make_sure_graph_works_concurrent(a);
+enum RequestType {
+    AddNode(usize),
+    RemoveNode(usize),
+    AddEdge(usize, usize),
+    RemoveEdge(usize, usize),
+    Done
 }
+
+// don't make generic for now bc life too hard already
+fn service<G: Graph<usize> + Send + Sync>(rx: Receiver<RequestType>, graph: Arc<G>) {
+    loop {
+        let request = rx.recv();
+        // fail silently..
+        if (request.is_err()) {
+            print!("FAILING THREAD SILENTLY. PROCEED WITH CAUTION");
+            break;
+        }
+        let request = request.unwrap();
+        match request {
+            RequestType::Done => { break; }
+            RequestType::AddNode(a) => {
+                graph.add_node(a);
+            }
+            RequestType::RemoveNode(a) => {
+                graph.remove_node(a);
+            }
+            RequestType::AddEdge(a,b) => {
+                // weight doesn't super matter here, just pass in 1.0
+                graph.add_edge(a,b, 1.0);
+            }
+            RequestType::RemoveEdge(a, b) => {
+                graph.remove_edge(a, b);
+            }
+
+        }
+    }
+
+}
+
+fn generate_request(num: usize, nodes_gen: &AtomicUsize) -> RequestType {
+    match num {
+        0 => {
+            let val = nodes_gen.fetch_add(1, Ordering::SeqCst);
+            RequestType::AddNode(val)
+        }
+        1 => {
+            let val = nodes_gen.fetch_add(0, Ordering::SeqCst);
+            let mut rng = rand::thread_rng();
+            let node1 = rng.gen_range(0..val);
+            let node2 = rng.gen_range(0..val);
+            RequestType::AddEdge(node1, node2)
+        }
+        2 => {
+            let val = nodes_gen.fetch_add(0, Ordering::SeqCst);
+            let mut rng = rand::thread_rng();
+            let node = rng.gen_range(0..val);
+            RequestType::RemoveNode(node)
+
+        }
+        _ => {
+            let val = nodes_gen.fetch_add(0, Ordering::SeqCst);
+            let mut rng = rand::thread_rng();
+            let node1 = rng.gen_range(0..val);
+            let node2 = rng.gen_range(0..val);
+            RequestType::RemoveEdge(node1, node2)
+        }
+
+    }
+}
+
+// graph must impl send and sync :)
+fn test_gen<G: Graph<usize> + Send + Sync>(graph: Arc<G>, nodes: &mut usize, edges: &mut usize, removed_nodes: &mut usize, removed_edges: &mut usize, num_threads: usize)
+{
+    // keep track of node ids, very very very roughly, ignoring removals to avoid memory overhead
+    let nodes_generated = AtomicUsize::new(0);
+
+    //start the workers, set up channel
+    let mut sender_list: Vec<Sender<RequestType>> = vec![];
+    let mut handles: Vec<JoinHandle<_>> = vec![];
+    for i in 0..num_threads {
+        let (tx, rx) = channel();
+        sender_list.push(tx);
+        let g = Arc::clone(&graph);
+        handles.push(
+            thread::spawn(move || {
+                service(rx, g);
+        }));
+    }
+
+    // give threads work in a round-robin fashion
+    let curr_thread = 0;
+
+    while (*nodes + *edges + *removed_edges + *removed_nodes > 0){
+        let mut rng = rand::thread_rng();
+        let req_type = rng.gen_range(0..4);
+        let req = generate_request(req_type, &nodes_generated);
+        match req {
+            RequestType::AddNode(_) => {
+                if (*nodes > 0){
+                    sender_list[curr_thread].send(req);
+                    *nodes = *nodes - 1;
+                }
+            }
+            RequestType::RemoveNode(_) => {
+                if (*removed_nodes > 0){
+                    sender_list[curr_thread].send(req);
+                    *removed_nodes = *removed_nodes - 1;
+                }
+
+            }
+            RequestType::AddEdge(_,_) => {
+                if (*edges > 0){
+                    sender_list[curr_thread].send(req);
+                    *edges = *edges - 1;
+                }
+                
+            }
+            RequestType::RemoveEdge(_,_) => {
+                if (*removed_edges > 0){
+                    sender_list[curr_thread].send(req);
+                    *removed_edges = *removed_edges - 1;
+                }
+            }
+            _ => ()
+        }
+    }
+
+    // cleanup
+    for i in 0..sender_list.len() {
+        sender_list[i].send(RequestType::Done);
+    }
+
+    for handle in handles {
+        handle.join();
+    }
+
+}
+
+// #[test]
+// fn test_coarse_concurrent() {
+//     let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
+//     let a = Arc::new(g);
+//     make_sure_graph_works_concurrent(a);
+// }
+
+// pub fn tcc() {
+//     let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
+//     let a: Arc<CoarseCSRGraph<usize>> = Arc::new(g);
+//     make_sure_graph_works_concurrent(a);
+// }
 
 // not concurrent
 fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
@@ -94,77 +244,3 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     
 }
 
-
-/*
-struct Wrapper<G: Graph<usize> + Send + Sync> {
-    pub g: Cell<G>
-}
-
-impl<G: Graph<usize> + Send + Sync> Wrapper<G> {
-    fn new(g: G) -> Self {
-        Self {
-            g: Cell::new(g)
-        }
-    }
-}
-
-unsafe impl<G: Graph<usize> + Send + Sync> Send for Wrapper<G> {}
-unsafe impl<G: Graph<usize> + Send + Sync> Sync for Wrapper<G> {}
-
-
-fn make_sure_graph_works_concurrent<G: Graph<usize> + Send + Sync> (mut g: G) {
-    let w = Wrapper::new(g);
-    
-    let mut handles = vec!();
-    for i in 0..10 {
-        // let w_: *const Wrapper<G> = &w;
-        handles.push(thread::spawn(|| {
-            w.g.get_mut().add_node(i);
-        }));
-    }
-
-    for h in handles.iter() {
-        h.join();
-    }
-}
-*/
-
-fn make_sure_graph_works_concurrent<G: Graph<usize> + Send + Sync + 'static> (a: Arc<G>) {
-    let mut handles: Vec<JoinHandle<()>> = vec!();
-    
-    println!("hi");
-    for i in 0..10 {
-        let a_ = a.clone();
-        let i_ = i.clone();
-        handles.push(thread::spawn(move || {
-            println!("hey from thread {}", i);
-            a_.add_node(i_);
-            a_.debug();
-        }));
-    }
-
-    let mut i = 0;
-    for h in handles {
-        println!("JOIN {}", i);
-        i += 1;
-        h.join();
-    }
-    println!("MAIN EXIT");
-}
-
-// _____ TESTS IN PROGRESS ______
-
-// sequentially add to graph
-// fn build_test_graph_parallel() -> SimpleGraph<int> {
-//     let file_contents = fs::read_to_string("test1.txt").expect("unable to read file");
-//     let lines = file_contents.lines();
-
-//     // spawn n threads -- maybe get input from cmd line at this point
-//     let handles = vec![];
-//     thread::spawn(|| {
-
-//     })
-//     // for line in file_contents.lines(){
-
-//     // }
-// }
