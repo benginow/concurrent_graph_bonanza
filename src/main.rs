@@ -1,9 +1,10 @@
 pub mod graph;
 
 pub mod simple;
-pub mod coarse;
+// pub mod coarse;
 // pub mod sssp;
-// pub mod one;
+pub mod one;
+pub mod csr;
 pub mod tests;
 pub mod bench;
 pub mod benchmark;
@@ -11,6 +12,6 @@ pub mod benchmark;
 use graph::Graph;
 
 fn main() {
-    // crate::tests::tcc();
-    crate::bench::bench();
+    crate::tests::tcc();
+    // crate::bench::bench();
 }

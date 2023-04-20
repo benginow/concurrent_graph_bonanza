@@ -3,7 +3,7 @@
 use std::fs;
 // use crate::simple::SimpleGraph;
 use crate::graph::Graph;
-use crate::coarse::CoarseCSRGraph;
+use crate::csr::CoarseCSRGraph;
 use crate::graph::GraphErr;
 use std::boxed::Box;
 use std::thread;
@@ -23,10 +23,17 @@ fn test_simple() {
 fn test_coarse() {
     let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
     make_sure_graph_works(g);
+    // TODO custom test
 }
 
 #[test]
 fn test_coarse_concurrent() {
+    let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
+    let a = Arc::new(g);
+    make_sure_graph_works_concurrent(a);
+}
+
+pub fn tc() {
     let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
     let a = Arc::new(g);
     make_sure_graph_works_concurrent(a);
@@ -75,6 +82,8 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
         }
     }
 
+    g.debug();
+    
     assert!(g.get_size() == (4, nedges));
     let mut val_ = g.remove_edge(2, 2);
     assert!(val_.is_ok());
@@ -89,9 +98,6 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
 
     let value = g.remove_node(1);
     assert!(value.is_ok());
-
-
-    
 }
 
 
