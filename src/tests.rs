@@ -88,7 +88,7 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     assert!(g.get_edge(2, 4) == Ok(0.5));
 
     let value = g.remove_node(1);
-    assert!(value.is_ok);
+    assert!(value.is_ok());
 
 
     
