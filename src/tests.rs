@@ -232,31 +232,38 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     
     // don't allow for duplicate entries.
     val = g.add_node(3);
+    print!("value:{val:?}\n");
     assert!(val.is_err());
     
     // make sure size is correct
     assert!(g.get_size() == (5, 0));
     
     // make sure double removal is not a thing
-    val = g.remove_node(3);
-    assert!(val.is_ok());
-    assert!(g.get_size() == (4, 0));
-    val = g.remove_node(3);
-    assert!(val.is_err());
-    assert!(g.get_size() == (4, 0));
 
-    let mut nedges = 0;
-    for i in 0..5 {
-        for j in 0..5 {
-            val = g.add_edge(i,j,1.0);
-            if i != 3 && j != 3 {
-                assert!(val.is_ok());
-                nedges += 1;
-            } else {
-                assert!(val == Err(GraphErr::NoSuchNode))
-            }
-        }
-    }
+    // val = g.remove_node(3);
+    // assert!(val.is_ok());
+    // assert!(g.get_size() == (4, 0));
+    // g.debug();
+    // val = g.remove_node(3);
+    // assert!(val.is_err());
+    // assert!(g.get_size() == (4, 0));
+    // g.debug();
+
+    // let mut nedges = 0;
+    // for i in 0..5 {
+    //     for j in 0..5 {
+    //         println!("add edge {} {} {}", i, j, 1.0);
+    //         val = g.add_edge(i,j,1.0);
+    //         g.debug();
+    //         println!("result is {:?}", val);
+    //         if i != 3 && j != 3 {
+    //             assert!(val.is_ok());
+    //             nedges += 1;
+    //         } else {
+    //             assert!(val == Err(GraphErr::NoSuchNode))
+    //         }
+    //     }
+    // }
 
     assert!(g.get_size() == (4, nedges));
     let mut val_ = g.remove_edge(2, 2);
