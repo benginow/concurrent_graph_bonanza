@@ -56,6 +56,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                 drop(read_labels);
                 let mut write_labels = self.labels.write().unwrap();
                 write_labels.insert(of, lbl);
+                drop(write_labels);
                 return retval;
             }  
             None => {
@@ -194,12 +195,9 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
 
                         match idx {
                             Some (x) => {
-                                // self.graph.read().unwrap()[*from_id].write().unwrap().remove(x.0);
                                 let edge_info = read_graph[x];
                                 read_graph.remove(x);
                                 Ok(edge_info.1)
-                                // read_graph.remove(x.0);
-                                // Ok(x.1.1)
                             }
                             None => {
                                 Err(GraphErr::NoSuchEdge)
