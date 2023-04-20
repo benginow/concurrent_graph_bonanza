@@ -26,15 +26,15 @@ pub trait Graph<Id: Clone + Debug + Eq + Hash> {
     fn get_node_label(&self, id: Id) -> Result<f64, GraphErr>;
     fn set_node_label(&self, id: Id, label: f64) -> Result<f64, GraphErr>;
 
-    fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr>;
+    fn add_edge(&self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr>;
     // returns old edge weight
-    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr>;
-    fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr>;
+    fn remove_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr>;
+    fn update_edge(&self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr>;
     // returns edge already existed ? old edge weight : zero
-    fn update_or_add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr>;
+    fn update_or_add_edge(&self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr>;
     
-    fn add_node(&mut self, id: Id) -> Result<(), GraphErr>;
-    fn remove_node(&mut self, id: Id) -> Result<(), GraphErr>;
+    fn add_node(&self, id: Id) -> Result<(), GraphErr>;
+    fn remove_node(&self, id: Id) -> Result<(), GraphErr>;
 
     fn debug(&self);
 }

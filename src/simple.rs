@@ -25,6 +25,8 @@ pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
     labels: RwLock<HashMap<Id, f64>>,
 }
 
+// unsafe impl Sync for SimpleGraph<Id: Clone + Debug + Eg + Hash + Sync> {}
+// unsafe impl Send for SimpleGraph<Id: Clone + Debug + Eg + Hash> {}
 
 impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     fn new() -> Self {
@@ -146,7 +148,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         }
     }
     
-    fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
+    fn add_edge(&self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
         // first, transform to ids
         let read_map = self.map.read().unwrap();
 
@@ -178,7 +180,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         }
     }
 
-    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
+    fn remove_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
         let read_map = self.map.read().unwrap();
         // get ids first
         let from_id = read_map.get(&from);
@@ -216,7 +218,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     }
 
 
-    fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
+    fn update_edge(&self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
         let read_map = self.map.read().unwrap();
         // get ids first
         let from_id = read_map.get(&from);
@@ -250,7 +252,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         }
     }
 
-    fn update_or_add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
+    fn update_or_add_edge(&self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
         let read_map = self.map.read().unwrap();
         // get ids first
         let from_id = read_map.get(&from);
@@ -286,7 +288,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         }
     }
 
-    fn add_node(&mut self, id: Id) -> Result<(), GraphErr> {
+    fn add_node(&self, id: Id) -> Result<(), GraphErr> {
         let read_map = self.map.read().unwrap();
         let read_id = read_map.get(&id);
         
@@ -313,7 +315,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     // enough just to remove connections --  the id will now just be ignored, which is super space inefficient!
     // extremely slow -- sequential search 
     // messiest code of all time -- sorry!
-    fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
+    fn remove_node(&self, id: Id) -> Result<(), GraphErr> {
         let read_map = self.map.read().unwrap();
         let read_id = read_map.get(&id);
 

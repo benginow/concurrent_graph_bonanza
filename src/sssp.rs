@@ -15,9 +15,9 @@ static NUM_THREADS: u32 = 8;
 
 fn relax_edge<Id: Clone + Eq + Hash + std::fmt::Debug, G: Graph<Id>>(graph: G, from: Id, to: Id){
     // read
-    let val1 = g.
-    let val2 =  
-    if 
+    // let val1 = g.
+    // let val2 =  
+    // if 
 }
 
 fn scheduler<Id: Clone + Eq + Hash + std::fmt::Debug>(r: Receiver<(Id,Id)>, snds: Vec<Sender<(Id, Id)>>) {
