@@ -15,12 +15,14 @@ pub enum EdgeChange {
 }
 
 pub trait Graph<Id: Clone + Debug + Eq + Hash> {
-    fn new() -> Self;
+    fn new() -> Self where Self: Sized;
     
     // returns (V, E)
     fn get_size(&self) -> (usize, usize);
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr>;
-    fn get_neighbors(&self, of: Id) -> Result<Vec<Id>, GraphErr>;
+    fn get_nodes(&self) -> Vec<Id>;
+    fn get_edges(&self) -> Vec<(Id, Id, f64)>;
+    fn get_neighbors(&self, id: Id) -> Result<Vec<Id>, GraphErr>;
 
     // label being f64 is kind of arbitrary here -- returns old node label
     fn get_node_label(&self, id: Id) -> Result<f64, GraphErr>;

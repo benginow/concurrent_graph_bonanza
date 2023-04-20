@@ -1,2 +1,4 @@
 /target
 .vscode/*
+idk.rs
+src/benchmark.rs

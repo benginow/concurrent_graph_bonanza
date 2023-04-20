@@ -8,11 +8,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 // things that can be done!
 // change orderings and see how this affects timings
-
-
-
 pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
-
     removed_vertex_counter: AtomicUsize,
     removed_edge_counter: AtomicUsize,
     vertex_counter: AtomicUsize,
@@ -291,15 +287,13 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     fn add_node(&self, id: Id) -> Result<(), GraphErr> {
         let read_map = self.map.read().unwrap();
         let read_id = read_map.get(&id);
-        
-        print!("we have read the thing, id is {id:?}\n");
 
         match read_id {
             Some(_) => {
                 return Err(GraphErr::NodeAlreadyExists);
             }
             None => {
-                print!("nONEE E {id:?}\n")
+                // print!("nONEE E {id:?}\n")
             }
         }
 
@@ -368,4 +362,15 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     fn debug(&self) {
         ()
     }
+
+    fn get_nodes(&self) -> Vec<Id> {
+        vec!()
+    }
+    
+    fn get_edges(&self) -> Vec<(Id, Id, f64)> {
+        vec!()
+    }
 }
+
+// unsafe impl<Id: Clone + Debug + Eq + Hash> Send for SimpleGraph<Id> {}
+// unsafe impl<Id: Clone + Debug + Eq + Hash> Sync for SimpleGraph<Id> {}

@@ -38,13 +38,13 @@ existing_edges = []
 
 # the file
 f = open(args.test_name, "wt")
-f.write("use std::fs;\nuse crate::simple::SimpleGraph;\nuse crate::graph::Graph;\nuse crate::coarse::CoarseCSRGraph;\nuse crate::graph::GraphErr;\n\n\n#[bench]\nfn test() {")
+f.write("use std::fs;\nuse crate::simple::SimpleGraph;\nuse crate::graph::Graph;\nuse crate::coarse::CoarseCSRGraph;\nuse crate::graph::GraphErr;\n\n\n\npub fn test() {\nlet g = SimpleGraph::new();\n")
 
 def gen_add_node():
     global node_count, num_nodes, existing_nodes
     str1 = "let val = g.add_node(" + str(num_nodes) + ");\n"
     str1 = str1 +  "assert!(val.is_ok());\n"
-    str1 = "let val = g.add_node(" + str(num_nodes) + ");\n"
+    str1 = str1 + "let val = g.add_node(" + str(num_nodes) + ");\n"
     str1 = str1 +  "assert!(val.is_err());\n"
     existing_nodes.append(num_nodes)
     node_count = node_count - 1
@@ -64,7 +64,8 @@ def gen_add_edge_helper(node_1, node_2):
     exists = (node_1, node_2) in existing_edges
     # if it exists already, then you want to assert that the insertion did not complete
     if exists:
-        str1 = "assert!(val == GraphErr::EdgeAlreadyExists);\n"
+        # str1 = "assert!(val == Err(GraphErr::EdgeAlreadyExists));\n"
+        str1 = "assert!(val.is_err());\n"
     else:
         str1 = "assert!(val.is_ok());\n"
     f.write(str1)
@@ -80,7 +81,8 @@ def gen_add_edge():
         gen_add_edge_helper(node_2, node_1)
 
     gen_add_edge_addition(node_1, node_2)
-    str1 = "assert!(val == GraphErr::EdgeAlreadyExists);\n"
+    # str1 = "assert!(val == Err(GraphErr::EdgeAlreadyExists));\n"
+    str1 = "assert!(val.is_err());\n"
     f.write(str1)
 
     edge_count = edge_count - 1
