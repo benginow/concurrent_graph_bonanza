@@ -288,8 +288,6 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         let read_map = self.map.read().unwrap();
         let read_id = read_map.get(&id);
         
-        print!("we have read the thing");
-
         match read_id {
             Some(_) => {
                 return Err(GraphErr::NodeAlreadyExists);
@@ -371,5 +369,5 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     }
 }
 
-unsafe impl<Id: Clone + Debug + Eq + Hash> Send for SimpleGraph<Id> {}
-unsafe impl<Id: Clone + Debug + Eq + Hash> Sync for SimpleGraph<Id> {}
+// unsafe impl<Id: Clone + Debug + Eq + Hash> Send for SimpleGraph<Id> {}
+// unsafe impl<Id: Clone + Debug + Eq + Hash> Sync for SimpleGraph<Id> {}
