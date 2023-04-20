@@ -64,7 +64,7 @@ impl CoarseCSR {
     }
 }
 
-impl Graph<usize> for CoarseCSR {
+impl CoarseCSR {
     fn new() -> Self {
         Self {
             offsets: vec!(),
@@ -341,7 +341,7 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         Err(GraphErr::NoSuchNode)
     }
     
-    fn add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
+    fn add_edge(&self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
                 let mut csr = self.csr.write().unwrap();
@@ -351,7 +351,7 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         }
     }
 
-    fn update_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
+    fn update_edge(&self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
                 let mut csr = self.csr.write().unwrap();
@@ -361,7 +361,7 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         }
     }
 
-    fn update_or_add_edge(&mut self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
+    fn update_or_add_edge(&self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
                 let mut csr = self.csr.write().unwrap();
@@ -371,7 +371,7 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         }
     }
 
-    fn add_node(&mut self, id: Id) -> Result<(), GraphErr> {
+    fn add_node(&self, id: Id) -> Result<(), GraphErr> {
         match self.get_id(&id) {
             Ok(_) => {
                 Err(GraphErr::NodeAlreadyExists)
@@ -400,11 +400,11 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseCSRGraph<Id> {
         println!("{:?}", csr);
     }
 
-    fn remove_edge(&mut self, from: Id, to: Id) -> Result<f64, GraphErr> {
+    fn remove_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
         Err(GraphErr::NoSuchEdge)
     }
 
-    fn remove_node(&mut self, id: Id) -> Result<(), GraphErr> {
+    fn remove_node(&self, id: Id) -> Result<(), GraphErr> {
         Err(GraphErr::NoSuchNode)
     }
 }
@@ -443,3 +443,6 @@ impl<Id: Clone + Debug + Eq + Hash> CoarseCSRGraph<Id> {
     }
 }
 */
+
+unsafe impl<Id: Clone + Debug + Eq + Hash> Send for CoarseCSRGraph<Id> {}
+unsafe impl<Id: Clone + Debug + Eq + Hash> Sync for CoarseCSRGraph<Id> {}

@@ -7,19 +7,26 @@ use crate::graph::{EdgeChange,Graph,GraphErr};
 use std::sync::{Arc,RwLock,RwLockWriteGuard,atomic::{AtomicUsize, Ordering}};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use std::sync::atomic::AtomicPtr;
+use std::marker::{Send,Sync};
 
 #[derive(Debug)]
 pub struct CoarseLogList {
     log: RwLock<Vec<(usize, usize, f64, bool)>>,
     adj_list: RwLock<Vec<Vec<(usize, f64)>>>,
     e: AtomicUsize,
-    log_size: usize,
+    log_size: AtomicUsize,
 }
+
+/*
+unsafe impl Send for CoarseLogList {}
+unsafe impl Sync for CoarseLogList {}
+*/
 
 impl CoarseLogList {
     fn intern_update_or_add_edge(&mut self, from: usize, to: usize, weight: f64, is_update: bool) {
         let mut log = self.log.write().unwrap();
-        if log.len() == self.log_size {
+        if log.len() == self.log_size.load(Ordering::SeqCst) {
             let mut adj = self.adj_list.write().unwrap();
             log.iter().map(|(f,t,w,u)| {
                 if *u {
@@ -55,7 +62,7 @@ impl CoarseLogList {
             log: RwLock::new(vec!()), // TODO make this size ls
             adj_list: RwLock::new(vec!()),
             e: AtomicUsize::new(0),
-            log_size: ls,
+            log_size: AtomicUsize::new(ls),
         }
     }
 
@@ -168,7 +175,8 @@ impl CoarseLogList {
 }
 
 pub struct CoarseGraphOne<Id: Clone + Debug + Eq + Hash> {
-    log_list: Arc<CoarseLogList>,
+    // log_list: Arc<CoarseLogList>,
+    log_list: CoarseLogList,
     internal_ids: Arc<RwLock<HashMap<Id, usize>>>
 }
 
@@ -197,7 +205,8 @@ impl<Id: Clone + Debug + Eq + Hash> CoarseGraphOne<Id> {
 impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     fn new() -> Self {
         Self {
-            log_list: Arc::new(CoarseLogList::new(100)),
+            // log_list: Arc::new(CoarseLogList::new(100)),
+            log_list: CoarseLogList::new(100),
             internal_ids: Arc::new(RwLock::new(HashMap::new()))
         }
     }
@@ -290,3 +299,6 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
         ()
     }
 }
+
+unsafe impl<Id: Clone + Debug + Eq + Hash> Send for CoarseGraphOne<Id> {}
+unsafe impl<Id: Clone + Debug + Eq + Hash> Sync for CoarseGraphOne<Id> {}

@@ -1,16 +1,23 @@
 #[cfg(test)]
 
 use std::fs;
-use crate::simple::SimpleGraph;
+// use crate::simple::SimpleGraph;
 use crate::graph::Graph;
 use crate::coarse::CoarseCSRGraph;
 use crate::graph::GraphErr;
+use std::boxed::Box;
+use std::thread;
+use std::thread::JoinHandle;
+use std::cell::Cell;
+use std::sync::Arc;
 
+/*
 #[test]
 fn test_simple() {
     let mut g: SimpleGraph<usize> = SimpleGraph::new();
     make_sure_graph_works(g);
 }
+*/
 
 #[test]
 fn test_coarse() {
@@ -18,9 +25,21 @@ fn test_coarse() {
     make_sure_graph_works(g);
 }
 
-// not concurrenct
+#[test]
+fn test_coarse_concurrent() {
+    let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
+    let a = Arc::new(g);
+    make_sure_graph_works_concurrent(a);
+}
+
+pub fn tcc() {
+    let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
+    let a = Arc::new(g);
+    make_sure_graph_works_concurrent(a);
+}
+
+// not concurrent
 fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
-    /*
     // make sure that adding any arbitrary number of entries works
     let mut val: Result<(), GraphErr>;
     for i in 0..5 {
@@ -67,19 +86,64 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     assert!(g.get_edge(2, 4) == Ok(1.0));
     g.update_or_add_edge(2, 4, 0.5);
     assert!(g.get_edge(2, 4) == Ok(0.5));
-    */
 }
 
 /*
-fn make_sure_graph_works_concurrent<G: Graph<usize>>(mut g: G) {
-    // we want to make sure that accesses to the graph can agree on some consistent
-    // assertions about the state
-
-    // how can we make sure that these assertions are correct?
-
-    // might just impl boruvka's for this
+struct Wrapper<G: Graph<usize> + Send + Sync> {
+    pub g: Cell<G>
 }
 
+impl<G: Graph<usize> + Send + Sync> Wrapper<G> {
+    fn new(g: G) -> Self {
+        Self {
+            g: Cell::new(g)
+        }
+    }
+}
+
+unsafe impl<G: Graph<usize> + Send + Sync> Send for Wrapper<G> {}
+unsafe impl<G: Graph<usize> + Send + Sync> Sync for Wrapper<G> {}
+
+
+fn make_sure_graph_works_concurrent<G: Graph<usize> + Send + Sync> (mut g: G) {
+    let w = Wrapper::new(g);
+    
+    let mut handles = vec!();
+    for i in 0..10 {
+        // let w_: *const Wrapper<G> = &w;
+        handles.push(thread::spawn(|| {
+            w.g.get_mut().add_node(i);
+        }));
+    }
+
+    for h in handles.iter() {
+        h.join();
+    }
+}
+*/
+
+fn make_sure_graph_works_concurrent<G: Graph<usize> + Send + Sync + 'static> (a: Arc<G>) {
+    let mut handles: Vec<JoinHandle<()>> = vec!();
+    
+    println!("hi");
+    for i in 0..10 {
+        let a_ = a.clone();
+        let i_ = i.clone();
+        handles.push(thread::spawn(move || {
+            println!("hey from thread {}", i);
+            a_.add_node(i_);
+            a_.debug();
+        }));
+    }
+
+    let mut i = 0;
+    for h in handles {
+        println!("JOIN {}", i);
+        i += 1;
+        h.join();
+    }
+    println!("MAIN EXIT");
+}
 
 // _____ TESTS IN PROGRESS ______
 
@@ -97,8 +161,3 @@ fn make_sure_graph_works_concurrent<G: Graph<usize>>(mut g: G) {
 
 //     // }
 // }
-
-fn boruvka() {
-    // keep an event queue for nodes
-}
-*/
