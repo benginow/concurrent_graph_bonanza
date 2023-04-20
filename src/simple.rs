@@ -13,6 +13,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
 
+    removed_vertex_counter: AtomicUsize,
+    removed_edge_counter: AtomicUsize,
     vertex_counter: AtomicUsize,
     edge_counter: AtomicUsize,
     // map from user's id to our id
@@ -25,8 +27,8 @@ pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
     labels: RwLock<HashMap<Id, f64>>,
 }
 
-// unsafe impl Sync for SimpleGraph<Id: Clone + Debug + Eg + Hash + Sync> {}
-// unsafe impl Send for SimpleGraph<Id: Clone + Debug + Eg + Hash> {}
+unsafe impl <Id: Clone + Debug + Eq + Hash> Sync for SimpleGraph<Id> {}
+unsafe impl <Id: Clone + Debug + Eq + Hash + Send> Send for SimpleGraph<Id> {}
 
 impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     fn new() -> Self {
@@ -34,11 +36,12 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         Self { 
             vertex_counter: AtomicUsize::new(0),
             edge_counter: AtomicUsize::new(0),
+            removed_vertex_counter: AtomicUsize::new(0),
+            removed_edge_counter: AtomicUsize::new(0),
             map: RwLock::new(HashMap::new()),
             id_to_value: RwLock::new(HashMap::new()),
             graph: Arc::new(RwLock::new(vec![])),
             labels: RwLock::new(HashMap::new()),
-            // this is a list of all parent nodes
         }
     }
 
@@ -47,7 +50,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         let read_map = self.map.read().unwrap();
         let from_id = read_map.get(&of);
         match from_id {
-            Some(id) => {
+            Some(_id) => {
                 let mut read_labels = self.labels.read().unwrap();
                 let label = read_labels.get(&of).clone();
                 let retval = match label {
@@ -71,7 +74,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         let read_map = self.map.read().unwrap();
         let from_id = read_map.get(&of);
         match from_id {
-            Some(id) => {
+            Some(_id) => {
                 let read_labels = self.labels.read().unwrap();
                 let label = read_labels.get(&of);
                 match label {
@@ -79,7 +82,6 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                     // no need to update until later when it matters
                     None => Ok(0.0),
                 }
-
             }
             None => {
                 return Err(GraphErr::NoSuchNode);
@@ -89,12 +91,11 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     }
 
     fn get_size(&self) -> (usize, usize) {
-        return (self.vertex_counter.load(Ordering::SeqCst), self.edge_counter.load(Ordering::SeqCst));
+        return (self.vertex_counter.load(Ordering::SeqCst) - self.removed_vertex_counter.load(Ordering::SeqCst), self.edge_counter.load(Ordering::SeqCst) - self.removed_edge_counter.load(Ordering::SeqCst))
     }
 
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
         let read_map = self.map.read().unwrap();
-       
         // get ids first
         let from_id = read_map.get(&from);
         match from_id {
@@ -106,7 +107,6 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                         let read_g = self.graph.read().unwrap();
                         let read_graph = read_g[*from_id].read().unwrap();
                         let val = read_graph.iter().find(|(id, _)| id == to);
-                        
                         match val {
                             Some(v) => {
                                 Ok(v.1)
@@ -152,7 +152,6 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
         // first, transform to ids
         let read_map = self.map.read().unwrap();
 
-       
         // get ids first
         let from_id = read_map.get(&from);
         match from_id {
@@ -160,13 +159,14 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                 let to_id = read_map.get(&to);
                 match to_id {
                     Some(to) => {
+                        let read_graph = self.graph.read().unwrap();
                         // now, add to the graph if and only if that edge doesnt already exist in the map
-                        if self.graph.read().unwrap()[*from_id].read().unwrap().iter().find(|(id, _)| id == to).is_some() {
+                        if read_graph[*from_id].read().unwrap().iter().find(|(id, _)| id == to).is_some() {
                             return Err(GraphErr::EdgeAlreadyExists)
                         }
                         
-                        self.graph.read().unwrap()[*from_id].write().unwrap().push((*to, weight));
-                        self.vertex_counter.fetch_add(1, Ordering::SeqCst);
+                        read_graph[*from_id].write().unwrap().push((*to, weight));
+                        self.edge_counter.fetch_add(1, Ordering::SeqCst);
                         Ok(())
                     }
                     None => {
@@ -190,15 +190,16 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                 match to_id {
                     Some(to) => {
                         // now, add to the graph if and only if that edge doesnt already exist in the map
-                        let mut read_g = self.graph.read().unwrap();
-                        let mut read_graph = read_g[*from_id].write().unwrap();
+                        let read_g = self.graph.read().unwrap();
+                        let mut write_graph = read_g[*from_id].write().unwrap();
                         // let idx = read_graph.iter().enumerate().find(|(id, _)| id == to);
-                        let idx = read_graph.iter().position(|(id, _)| id == to);
+                        let idx = write_graph.iter().position(|(id, _)| id == to);
 
                         match idx {
                             Some (x) => {
-                                let edge_info = read_graph[x];
-                                read_graph.remove(x);
+                                let edge_info = write_graph[x];
+                                write_graph.remove(x);
+                                self.removed_edge_counter.fetch_sub(1, Ordering::SeqCst);
                                 Ok(edge_info.1)
                             }
                             None => {
@@ -218,74 +219,72 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     }
 
 
+    // TODO: MAKE WORK
     fn update_edge(&self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
         let read_map = self.map.read().unwrap();
         // get ids first
-        let from_id = read_map.get(&from);
-        match from_id {
-            Some(from_id) => {
-                let to_id = read_map.get(&to);
-                match to_id {
-                    Some(to) => {
-                        // now, add to the graph if and only if that edge doesnt already exist in the map
-                        let read_g = self.graph.read().unwrap();
-                        let read_graph = read_g[*from_id].read().unwrap();
-                        let idx = read_graph.iter().enumerate().find(|(id, _)| id == to);
-                        match idx {
-                            Some (x) => {
-                                self.graph.read().unwrap()[*from_id].write().unwrap()[x.0] = (*to, weight);
-                                return Ok(x.1.1);
-                            }
-                            None => {
-                                return Err(GraphErr::NoSuchEdge);
-                            }
-                        }
-                    }
-                    None => {
-                        return Err(GraphErr::NoSuchNode);
-                    }
-                }
-            }
-            None => {
+        // let from_id = read_map.get(&from);
+        // match from_id {
+        //     Some(from_id) => {
+        //         let to_id = read_map.get(&to);
+        //         match to_id {
+        //             Some(to) => {
+        //                 // // now, add to the graph if and only if that edge doesnt already exist in the map
+        //                 // let read_g = self.graph.read().unwrap();
+        //                 // let write_graph = read_g[*from_id].write().unwrap();
+        //                 // if write_graph.iter().enumerate().find(|(id, _)| id == to).is_some() {
+        //                 //     write_graph[x.0] = (*to, weight);
+        //                 //     return Ok(x.1.1);
+        //                 // } else {
+        //                 //     return Err(GraphErr::NoSuchEdge);
+        //                 // }
+        //             }
+        //             None => {
+        //                 return Err(GraphErr::NoSuchNode);
+        //             }
+        //         }
+        //     }
+        //     None => {
                 return Err(GraphErr::NoSuchNode);
-            }
-        }
+            // }
+        // }
     }
 
     fn update_or_add_edge(&self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
-        let read_map = self.map.read().unwrap();
-        // get ids first
-        let from_id = read_map.get(&from);
-        match from_id {
-            Some(from_id) => {
-                let to_id = read_map.get(&to);
-                match to_id {
-                    Some(to) => {
-                        // now, add to the graph if and only if that edge doesnt already exist in the map
-                        let read_g = self.graph.read().unwrap();
-                        let read_graph = read_g[*from_id].read().unwrap();
-                        // need a way to take ids -> 
-                        let idx = read_graph.iter().enumerate().find(|(id, _)| id == to);
-                        match idx {
-                            Some (x) => {
-                                self.graph.read().unwrap()[*from_id].write().unwrap()[x.0] = (*to, weight);
-                                return Ok(EdgeChange::Updated(x.1.1));
-                            }
-                            None => {
-                                self.graph.read().unwrap()[*from_id].write().unwrap().push((*to, weight));
-                                Ok(EdgeChange::Added)
-                            }
-                        }
-                    }
-                    None => {
-                        return Err(GraphErr::NoSuchNode);
-                    }
-                }
-            }
-            None => {
-                return Err(GraphErr::NoSuchNode);
-            }
-        }
+        // let read_map = self.map.read().unwrap();
+        // // get ids first
+        // let from_id = read_map.get(&from);
+        // match from_id {
+        //     Some(from_id) => {
+        //         let to_id = read_map.get(&to);
+        //         match to_id {
+        //             Some(to) => {
+        //                 // now, add to the graph if and only if that edge doesnt already exist in the map
+        //                 let read_g = self.graph.read().unwrap();
+        //                 let read_graph = read_g[*from_id].read().unwrap();
+        //                 // need a way to take ids -> 
+        //                 let idx = read_graph.iter().enumerate().find(|(id, _)| id == to);
+        //                 match idx {
+        //                     Some (x) => {
+        //                         self.graph.read().unwrap()[*from_id].write().unwrap()[x.0] = (*to, weight);
+        //                         return Ok(EdgeChange::Updated(x.1.1));
+        //                     }
+        //                     None => {
+        //                         self.graph.read().unwrap()[*from_id].write().unwrap().push((*to, weight));
+        //                         Ok(EdgeChange::Added)
+        //                     }
+        //                 }
+        //             }
+        //             None => {
+        //                 return Err(GraphErr::NoSuchNode);
+        //             }
+        //         }
+        //     }
+        //     None => {
+        //         return Err(GraphErr::NoSuchNode);
+        //     }
+        // }
+        return Err(GraphErr::NoSuchNode);
     }
 
     fn add_node(&self, id: Id) -> Result<(), GraphErr> {
@@ -301,14 +300,20 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
             None => ()
         }
 
+        let index = self.vertex_counter.fetch_add(1, Ordering::SeqCst);
+
         drop(read_map);
 
         let mut writing = self.graph.write().unwrap();
-                writing.push(Arc::new(RwLock::new(vec![])));
-                let length = writing.len();
-                self.map.write().unwrap().insert(id, length);
-                self.id_to_value.write().unwrap().insert(length, id);
-                Ok(())
+        writing.push(Arc::new(RwLock::new(vec![])));
+        // let length = writing.len();
+        self.map.write().unwrap().insert(id, index);
+        self.id_to_value.write().unwrap().insert(index, id);
+        
+        
+        
+        Ok(())
+       
 
     }
 
@@ -341,16 +346,19 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                         Some(i) => {
                             let mut write_row = r.write().unwrap();
                             write_row.remove(i);
+                            print!("fuck");
                         }
                         None => ()
                     }
                 }
+                self.removed_vertex_counter.fetch_sub(1, Ordering::SeqCst);
                 Ok(())
             }
             None => {
                 Err(GraphErr::NoSuchEdge)
             }
         }
+
     }
 
     fn debug(&self) {
