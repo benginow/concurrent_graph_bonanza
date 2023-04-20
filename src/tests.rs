@@ -77,7 +77,7 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
 
     assert!(g.get_size() == (4, nedges));
     let mut val_ = g.remove_edge(2, 2);
-    assert!(val.is_ok());
+    assert!(val_.is_ok());
     assert!(g.get_size() == (4, nedges - 1));
     val_ = g.remove_edge(2, 2);
     assert!(val_ == Err(GraphErr::NoSuchEdge));
@@ -86,7 +86,14 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     assert!(g.get_edge(2, 4) == Ok(1.0));
     g.update_or_add_edge(2, 4, 0.5);
     assert!(g.get_edge(2, 4) == Ok(0.5));
+
+    let value = g.remove_node(1);
+    assert!(value.is_ok);
+
+
+    
 }
+
 
 /*
 struct Wrapper<G: Graph<usize> + Send + Sync> {
