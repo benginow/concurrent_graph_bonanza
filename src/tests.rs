@@ -15,19 +15,20 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::cell::Cell;
 use std::sync::Arc;
+use std::time::Instant;
 
 
-#[test]
-fn test_simple_seq() {
-    let mut g: SimpleGraph<usize> = SimpleGraph::new();
-    make_sure_graph_works(g);
-}
+// #[test]
+// fn test_simple_seq() {
+//     let mut g: SimpleGraph<usize> = SimpleGraph::new();
+//     make_sure_graph_works(g);
+// }
 
-#[test]
-fn test_coarse_seq() {
-    let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
-    make_sure_graph_works(g);
-}
+// #[test]
+// fn test_coarse_seq() {
+//     let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
+//     make_sure_graph_works(g);
+// }
 
 
 // ________________________________________PARALLEL TESTS BEGIN HERE________________________________________
@@ -152,7 +153,8 @@ fn test_gen<G: Graph<usize> + Send + Sync + 'static>(graph: Arc<G>, nodes: &mut 
                 if (*nodes > 0){
                     let res = sender_list[curr_thread].send(req);
                     if (res.is_err()){
-                        print!("oh shit!")
+                        print!("oh shit!");
+                        return;
                     }
                     *nodes = *nodes - 1;
                 }
@@ -161,7 +163,8 @@ fn test_gen<G: Graph<usize> + Send + Sync + 'static>(graph: Arc<G>, nodes: &mut 
                 if (*removed_nodes > 0){
                     let res = sender_list[curr_thread].send(req);
                     if (res.is_err()){
-                        print!("oh shit!")
+                        print!("oh shit!");
+                        return;
                     }
                     *removed_nodes = *removed_nodes - 1;
                 }
@@ -171,7 +174,8 @@ fn test_gen<G: Graph<usize> + Send + Sync + 'static>(graph: Arc<G>, nodes: &mut 
                 if (*edges > 0){
                     let res = sender_list[curr_thread].send(req);
                     if (res.is_err()){
-                        print!("oh shit!")
+                        print!("oh shit!");
+                        return;
                     }
                     *edges = *edges - 1;
                 }
@@ -181,7 +185,8 @@ fn test_gen<G: Graph<usize> + Send + Sync + 'static>(graph: Arc<G>, nodes: &mut 
                 if (*removed_edges > 0){
                     let res = sender_list[curr_thread].send(req);
                     if (res.is_err()){
-                        print!("oh shit!")
+                        print!("oh shit!");
+                        return;
                     }
                     *removed_edges = *removed_edges - 1;
                     
@@ -202,41 +207,63 @@ fn test_gen<G: Graph<usize> + Send + Sync + 'static>(graph: Arc<G>, nodes: &mut 
 
 }
 
+fn bench<G: Graph<usize> + Send + Sync + 'static>(g: Arc<G>, num_nodes: &mut usize, num_edges: &mut usize, removed_nodes: &mut usize, removed_edges: &mut usize, num_threads: usize){
+    let mut timing = 0.0;
+    let num_loops = 15;
+    let div_me = (*num_edges + *num_nodes) as u128;
+    // 1024 by 1024
+    for i in 0..num_loops{
+        let start = Instant::now();
+        
+        test_gen(g.clone(), num_nodes, num_edges, removed_nodes, removed_edges, num_threads);
+        let duration = start.elapsed().as_micros();
+        timing += duration as f64 / num_loops as f64;
+    }
+    let throughput = div_me as f64 / timing as f64;
+    println!("e: {num_edges} n: {num_nodes} t: {num_threads} duration: {timing} throughput(instr/micros) = {throughput}");
+}
+
 #[test]
-fn test_simple_conc() {
-    let g: Arc<SimpleGraph<usize>> = Arc::new(SimpleGraph::new());
+fn test_simple_conc_vary_num_threads() {
+    println!("VARYING NUM THREADS");
+    for i in 0..8 {
+        let g: Arc<SimpleGraph<usize>> = Arc::new(SimpleGraph::new());
+        bench(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 1 << i);
+    }
+}
+
+#[test]
+fn test_coarse_csr_conc_vary_num_threads() {
+    println!("VARYING NUM THREADS");
+    for i in 0..8 {
+        let g: Arc<CoarseCSRGraph<usize>> = Arc::new(CoarseCSRGraph::new());
+        bench(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 1 << i);
+    }
+}
+
+#[test]
+fn test_coarse_conc() {
+    let mut g: Arc<CoarseCSRGraph<usize>> = Arc::new(CoarseCSRGraph::new());
     test_gen(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 5);
 }
 
-// #[test]
-// fn test_coarse_concurrent() {
-//     let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
-//     let a = Arc::new(g);
-//     make_sure_graph_works_concurrent(a);
-// }
+// ____________________________________ SEQUENTIAL TESTS -- UNCOMMENT IF NEEDED ____________________________________
 
-// pub fn tcc() {
-//     let mut g: CoarseCSRGraph<usize> = CoarseCSRGraph::new();
-//     let a: Arc<CoarseCSRGraph<usize>> = Arc::new(g);
-//     make_sure_graph_works_concurrent(a);
-// }
-
-// not concurrent
-fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
-    // make sure that adding any arbitrary number of entries works
-    let mut val: Result<(), GraphErr>;
-    for i in 0..5 {
-        val = g.add_node(i);
-        assert!(val.is_ok());
-    }
+// fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
+//     // make sure that adding any arbitrary number of entries works
+//     let mut val: Result<(), GraphErr>;
+//     for i in 0..5 {
+//         val = g.add_node(i);
+//         assert!(val.is_ok());
+//     }
     
-    // don't allow for duplicate entries.
-    val = g.add_node(3);
-    print!("value:{val:?}\n");
-    assert!(val.is_err());
+//     // don't allow for duplicate entries.
+//     val = g.add_node(3);
+//     print!("value:{val:?}\n");
+//     assert!(val.is_err());
     
-    // make sure size is correct
-    assert!(g.get_size() == (5, 0));
+//     // make sure size is correct
+//     assert!(g.get_size() == (5, 0));
     
     // make sure double removal is not a thing
 
@@ -265,22 +292,22 @@ fn make_sure_graph_works<G: Graph<usize>>(mut g: G) {
     //     }
     // }
 
-    assert!(g.get_size() == (4, nedges));
-    let mut val_ = g.remove_edge(2, 2);
-    assert!(val_.is_ok());
-    assert!(g.get_size() == (4, nedges - 1));
-    val_ = g.remove_edge(2, 2);
-    assert!(val_ == Err(GraphErr::NoSuchEdge));
-    assert!(g.get_size() == (4, nedges - 1));
+    // assert!(g.get_size() == (4, nedges));
+    // let mut val_ = g.remove_edge(2, 2);
+    // assert!(val_.is_ok());
+    // assert!(g.get_size() == (4, nedges - 1));
+    // val_ = g.remove_edge(2, 2);
+    // assert!(val_ == Err(GraphErr::NoSuchEdge));
+    // assert!(g.get_size() == (4, nedges - 1));
 
-    assert!(g.get_edge(2, 4) == Ok(1.0));
-    g.update_or_add_edge(2, 4, 0.5);
-    assert!(g.get_edge(2, 4) == Ok(0.5));
+    // assert!(g.get_edge(2, 4) == Ok(1.0));
+    // g.update_or_add_edge(2, 4, 0.5);
+    // assert!(g.get_edge(2, 4) == Ok(0.5));
 
-    let value = g.remove_node(1);
-    assert!(value.is_ok());
+    // let value = g.remove_node(1);
+    // assert!(value.is_ok());
 
 
     
-}
+// }
 

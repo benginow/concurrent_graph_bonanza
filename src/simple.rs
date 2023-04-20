@@ -293,7 +293,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                 return Err(GraphErr::NodeAlreadyExists);
             }
             None => {
-                print!("nONEE E {id:?}\n")
+                // print!("nONEE E {id:?}\n")
             }
         }
 
