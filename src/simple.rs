@@ -9,7 +9,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 // things that can be done!
 // change orderings and see how this affects timings
 pub struct SimpleGraph<Id: Clone + Debug + Eq + Hash> {
-
     removed_vertex_counter: AtomicUsize,
     removed_edge_counter: AtomicUsize,
     vertex_counter: AtomicUsize,
@@ -88,6 +87,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     }
 
     fn get_size(&self) -> (usize, usize) {
+        // println!("\nohohoh{0}", self.removed_vertex_counter.load(Ordering::SeqCst));
         return (self.vertex_counter.load(Ordering::SeqCst) - self.removed_vertex_counter.load(Ordering::SeqCst), self.edge_counter.load(Ordering::SeqCst) - self.removed_edge_counter.load(Ordering::SeqCst))
     }
 
@@ -196,7 +196,7 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                             Some (x) => {
                                 let edge_info = write_graph[x];
                                 write_graph.remove(x);
-                                self.removed_edge_counter.fetch_sub(1, Ordering::SeqCst);
+                                self.removed_edge_counter.fetch_add(1, Ordering::SeqCst);
                                 Ok(edge_info.1)
                             }
                             None => {
@@ -287,12 +287,14 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     fn add_node(&self, id: Id) -> Result<(), GraphErr> {
         let read_map = self.map.read().unwrap();
         let read_id = read_map.get(&id);
-        
+
         match read_id {
             Some(_) => {
                 return Err(GraphErr::NodeAlreadyExists);
             }
-            None => ()
+            None => {
+                // print!("nONEE E {id:?}\n")
+            }
         }
 
         let index = self.vertex_counter.fetch_add(1, Ordering::SeqCst);
@@ -346,7 +348,8 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
                         None => ()
                     }
                 }
-                self.removed_vertex_counter.fetch_sub(1, Ordering::SeqCst);
+                self.removed_vertex_counter.fetch_add(1, Ordering::SeqCst);
+                
                 Ok(())
             }
             None => {
