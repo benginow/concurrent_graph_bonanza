@@ -38,7 +38,7 @@ existing_edges = []
 
 # the file
 f = open(args.test_name, "wt")
-f.write("use std::fs;\nuse crate::simple::SimpleGraph;\nuse crate::graph::Graph;\nuse crate::coarse::CoarseCSRGraph;\nuse crate::graph::GraphErr;\n\n\n\npub fn test() {\nlet g = SimpleGraph::new();\n")
+f.write("use std::fs;\nuse crate::simple::SimpleGraph;\nuse crate::graph::Graph;\nuse crate::coarse::CoarseCSRGraph;\nuse crate::graph::GraphErr;\nuse crate::one::CoarseGraphOne;\n\n\npub fn test() {\nlet g = CoarseGraphOne::new();\n")
 
 def gen_add_node():
     global node_count, num_nodes, existing_nodes
