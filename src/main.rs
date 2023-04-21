@@ -12,5 +12,5 @@ pub mod benchmark;
 use graph::Graph;
 
 fn main() {
-    // crate::bench::bench();
+    crate::bench::bench();
 }

@@ -25,42 +25,49 @@ impl CoarseCSR {
     }
 
     // assumes that the nodes exist--i love helper functions!
-    fn intern_update_or_add_edge(&mut self, from: usize, to: usize, weight: f64, is_update: bool) {
+    fn intern_update_or_add_edge(&mut self, from: usize, to: usize, weight: f64, can_update: bool, can_add: bool) -> Result<EdgeChange, GraphErr> {
         let (v, e) = self.get_size();
         
-        if !is_update {
-            // add edge
-            let (off_start, off_end) = self.get_offsets(from);
-            let new_edge = (to, weight);
+        let (off_start, off_end) = self.get_offsets(from);
+        let new_edge = (to, weight);
 
-            // insert edge into edge list
-            // TODO this could be a more effective data structure 🤪 don't use linear search?
-            for i in off_start..=off_end {
-                if i == e {
+        for i in off_start..=off_end {
+            if i == off_end {
+                if can_add {
                     self.edges.push(new_edge);
-                    break;
-                }
 
-                if self.edges[i].0 > to { // need to insert at this index
-                    self.edges.insert(i, new_edge);
-                    break;
+                    for j in (from + 1)..v {
+                        self.offsets[j] += 1;
+                    }
+                    return Ok(EdgeChange::Added);
+                } else {
+                    return Err(GraphErr::NoSuchEdge);
                 }
             }
-            
-            // shift offsets
-            for i in (from + 1)..v {
-                self.offsets[i] += 1;
-            }
-        } else {
-            let (off_start, off_end) = self.get_offsets(from);
 
-            for i in off_start..off_end {
-                if self.edges[i].0 == to {
+            if self.edges[i].0 == to {
+                if can_update {
+                    let old_w = self.edges[i].1;
                     self.edges[i].1 = weight;
-                    break;
+                    return Ok(EdgeChange::Updated(old_w));
+                } else {
+                    return Err(GraphErr::EdgeAlreadyExists);
+                }
+            } else if self.edges[i].0 > to { // need to insert at this index
+                if can_add {
+                    self.edges.insert(i, new_edge);
+                    
+                    for j in (from + 1)..v {
+                        self.offsets[j] += 1;
+                    }
+                    return Ok(EdgeChange::Added);
+                } else {
+                    return Err(GraphErr::NoSuchEdge);                    
                 }
             }
         }
+
+        unreachable!()
     }
 }
 
@@ -133,53 +140,33 @@ impl CoarseCSR {
     }
     
     fn add_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<(), GraphErr> {
-        match self.get_edge(from, to) {
-            Ok(_) => Err(GraphErr::EdgeAlreadyExists),
-            Err(e) => match e {
-                GraphErr::NoSuchNode => Err(e),
-                _ => {
-                    self.intern_update_or_add_edge(from, to, weight, false);
-                    Ok(())
-                }
-            }
-        }
-    }
-
-    fn update_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<f64, GraphErr> {
-        match self.get_edge(from, to) {
-            Ok(old_weight) => {
-                self.intern_update_or_add_edge(from, to, weight, true);
-                Ok(old_weight)
-            },
+        match self.intern_update_or_add_edge(from, to, weight, false, true) {
+            Ok(_) => Ok(()),
             Err(e) => Err(e)
         }
     }
 
-    fn update_or_add_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<EdgeChange, GraphErr> {
-        match self.get_edge(from, to) {
-            Ok(old_weight) => {
-                self.intern_update_or_add_edge(from, to, weight, true);
-                Ok(EdgeChange::Updated(old_weight))
-            },
-            Err(e) => match e {
-                GraphErr::NoSuchEdge => {
-                    self.intern_update_or_add_edge(from, to, weight, true);
-                    Ok(EdgeChange::Added)
-                },
-                _ => Err(e),
-            }
+    fn update_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<f64, GraphErr> {
+        match self.intern_update_or_add_edge(from, to, weight, false, true) {
+            Ok(EdgeChange::Updated(w)) => Ok(w),
+            Err(e) => Err(e),
+            _ => unreachable!()
         }
     }
 
+    fn update_or_add_edge(&mut self, from: usize, to: usize, weight: f64) -> Result<EdgeChange, GraphErr> {
+        self.intern_update_or_add_edge(from, to, weight, true, true)
+    }
+
     fn add_node(&mut self, id: usize) -> Result<(), GraphErr> {
-        let (v, _) = self.get_size();
+        let (v, e) = self.get_size();
             
         if id < v {
             Err(GraphErr::NodeAlreadyExists)
         } else if id > v {
             panic!("invalid node id {} passed to csr add_node\n", id);
         } else {
-            self.offsets.push(self.edges.len());
+            self.offsets.push(e);
             Ok(())
         }
     }
