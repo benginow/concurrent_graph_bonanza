@@ -10,5 +10,5 @@ pub mod simple_coarse;
 use graph::Graph;
 
 fn main() {
-    crate::bench::bench();
+    // crate::bench::bench();
 }
