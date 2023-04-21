@@ -12,6 +12,5 @@ pub mod benchmark;
 use graph::Graph;
 
 fn main() {
-    crate::tests::tcc();
     // crate::bench::bench();
 }
