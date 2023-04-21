@@ -223,38 +223,81 @@ fn bench<G: Graph<usize> + Send + Sync + 'static>(g: Arc<G>, num_nodes: &mut usi
 
 #[test]
 fn test_simple_conc_vary_num_threads() {
+    println!("simple");
     println!("VARYING NUM THREADS");
     for i in 0..8 {
         let g: Arc<SimpleGraph<usize>> = Arc::new(SimpleGraph::new());
-        bench(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 1 << i);
+        bench(g, &mut 100000, &mut 100000, &mut 0, &mut 0, 1 << i);
     }
 }
 
 #[test]
 fn test_coarse_simple_conc_vary_num_threads() {
+    println!("coarse simple");
     println!("VARYING NUM THREADS");
     for i in 0..8 {
         let g: Arc<CSimpleGraph<usize>> = Arc::new(CSimpleGraph::new());
-        bench(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 1 << i);
+        bench(g, &mut 100000, &mut 100000, &mut 0, &mut 0, 1 << i);
     }
 }
 
 #[test]
 fn test_coarse_csr_conc_vary_num_threads() {
+    println("coarse csr");
     println!("VARYING NUM THREADS");
     for i in 0..8 {
         let g: Arc<CoarseCSRGraph<usize>> = Arc::new(CoarseCSRGraph::new());
-        bench(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 1 << i);
+        bench(g, &mut 100000, &mut 100000, &mut 0, &mut 0, 1 << i);
     }
 }
 
-
 #[test]
 fn test_graph_one_vary_num_threads() {
+    println!("graphone");
     println!("VARYING NUM THREADS");
     for i in 0..8 {
         let g: Arc<CoarseGraphOne<usize>> = Arc::new(CoarseGraphOne::new());
         bench(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 1 << i);
+    }
+}
+
+#[test]
+fn test_simple_conc_vary_sparsity() {
+    println!("simple");
+    println!("VARYING SPARSITY");
+    for i in 0..8 {
+        let g: Arc<SimpleGraph<usize>> = Arc::new(SimpleGraph::new());
+        bench(g, &mut 1000000, &mut (100 << i), &mut 0, &mut 0, 8);
+    }
+}
+
+#[test]
+fn test_coarse_simple_conc_vary_sparsity() {
+    println!("coarse simple");
+    println!("VARYING SPARSITY");
+    for i in 0..8 {
+        let g: Arc<CSimpleGraph<usize>> = Arc::new(CSimpleGraph::new());
+        bench(g, &mut 1000000, &mut (100 << i), &mut 0, &mut 0, 8);
+    }
+}
+
+#[test]
+fn test_coarse_csr_conc_vary_sparsity() {
+    println("coarse csr");
+    println!("VARYING SPARSITY");
+    for i in 0..8 {
+        let g: Arc<CoarseCSRGraph<usize>> = Arc::new(CoarseCSRGraph::new());
+        bench(g, &mut 1000000, &mut (100 << i), &mut 0, &mut 0, 8);
+    }
+}
+
+#[test]
+fn test_graph_one_vary__sparsity() {
+    println!("graphone");
+    println!("VARYING SPARSITY");
+    for i in 0..8 {
+        let g: Arc<CoarseGraphOne<usize>> = Arc::new(CoarseGraphOne::new());
+        bench(g, &mut 1000000, &mut (100 << i), &mut 0, &mut 0, 8);
     }
 }
 
