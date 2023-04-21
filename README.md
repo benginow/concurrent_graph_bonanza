@@ -1,5 +1,16 @@
+# Implementations
+## Fine-grained locking of adjacency list
+This implementation is under simple.rs
+
+## Coarse-grained locking around CSR
+This implementation is under coarse.rs
+
+## Graphone
+This implementation is under one.rs
+
 # Testing
 Stress testing
+In tests.rs, you should find a bench function -- just run that in order to bench a stress test.
 
 
 You may use the python script in order to generate a correctness test. Please do not generate very large tests since they are statically generated -- this is NOT a stress testing framework
