@@ -209,6 +209,7 @@ fn bench<G: Graph<usize> + Send + Sync + 'static>(g: Arc<G>, num_nodes: &mut usi
     let mut timing = 0.0;
     let num_loops = 15;
     let div_me = (*num_edges + *num_nodes) as u128;
+    println!("e: {num_edges} n: {num_nodes} t: {num_threads}");
     // 1024 by 1024
     for i in 0..num_loops{
         let start = Instant::now();
@@ -218,7 +219,7 @@ fn bench<G: Graph<usize> + Send + Sync + 'static>(g: Arc<G>, num_nodes: &mut usi
         timing += duration as f64 / num_loops as f64;
     }
     let throughput = div_me as f64 / timing as f64;
-    println!("e: {num_edges} n: {num_nodes} t: {num_threads} duration: {timing} throughput(instr/micros) = {throughput}");
+    println!("duration = {timing} throughput(instr/micros) = {throughput}");
 }
 
 #[test]
@@ -243,7 +244,7 @@ fn test_coarse_simple_conc_vary_num_threads() {
 
 #[test]
 fn test_coarse_csr_conc_vary_num_threads() {
-    println("coarse csr");
+    println!("coarse csr");
     println!("VARYING NUM THREADS");
     for i in 0..8 {
         let g: Arc<CoarseCSRGraph<usize>> = Arc::new(CoarseCSRGraph::new());
@@ -283,7 +284,7 @@ fn test_coarse_simple_conc_vary_sparsity() {
 
 #[test]
 fn test_coarse_csr_conc_vary_sparsity() {
-    println("coarse csr");
+    println!("coarse csr");
     println!("VARYING SPARSITY");
     for i in 0..8 {
         let g: Arc<CoarseCSRGraph<usize>> = Arc::new(CoarseCSRGraph::new());

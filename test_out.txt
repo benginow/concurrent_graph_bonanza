@@ -1,0 +1,195 @@
+simple
+VARYING NUM THREADS
+making graph
+e: 100000 n: 100000 t: 1
+duration = 72911.86666666661 throughput(instr/micros) = 2.743037713111174
+making graph
+e: 100000 n: 100000 t: 2
+duration = 70388.79999999999 throughput(instr/micros) = 2.841361125633624
+making graph
+e: 100000 n: 100000 t: 4
+duration = 70335 throughput(instr/micros) = 2.8435345134001566
+making graph
+e: 100000 n: 100000 t: 8
+duration = 71197.6666666667 throughput(instr/micros) = 2.809080821937047
+making graph
+e: 100000 n: 100000 t: 16
+duration = 70967.8 throughput(instr/micros) = 2.8181795123985807
+making graph
+e: 100000 n: 100000 t: 32
+duration = 71970.46666666666 throughput(instr/micros) = 2.778917648628095
+making graph
+e: 100000 n: 100000 t: 64
+duration = 71695.59999999998 throughput(instr/micros) = 2.789571466031389
+making graph
+e: 100000 n: 100000 t: 128
+duration = 72150.2 throughput(instr/micros) = 2.771995088024704
+
+coarse simple
+VARYING NUM THREADS
+making graph
+e: 100000 n: 100000 t: 1
+duration = 71798.6 throughput(instr/micros) = 2.785569635062522
+making graph
+e: 100000 n: 100000 t: 2
+duration = 70860.73333333335 throughput(instr/micros) = 2.8224376264804856
+making graph
+e: 100000 n: 100000 t: 4
+duration = 71079.53333333334 throughput(instr/micros) = 2.8137494806287413
+making graph
+e: 100000 n: 100000 t: 8
+duration = 71296.93333333332 throughput(instr/micros) = 2.8051697408210177
+making graph
+e: 100000 n: 100000 t: 16
+duration = 71014.8 throughput(instr/micros) = 2.8163143457420143
+making graph
+e: 100000 n: 100000 t: 32
+duration = 71199.79999999999 throughput(instr/micros) = 2.808996654484985
+making graph
+e: 100000 n: 100000 t: 64
+duration = 74794.13333333333 throughput(instr/micros) = 2.6740065174452186
+making graph
+e: 100000 n: 100000 t: 128
+duration = 72030.79999999999 throughput(instr/micros) = 2.7765900142716733
+
+coarse csr
+VARYING NUM THREADS
+e: 100000 n: 100000 t: 1
+duration = 2601569 throughput(instr/micros) = 0.07687668480059533
+e: 100000 n: 100000 t: 2
+test tests::test_coarse_csr_conc_vary_num_threads has been running for over 60 seconds
+duration = 2632476.466666667 throughput(instr/micros) = 0.07597408847998058
+e: 100000 n: 100000 t: 4
+duration = 2606934 throughput(instr/micros) = 0.07671847465259957
+e: 100000 n: 100000 t: 8
+duration = 2628720.666666666 throughput(instr/micros) = 0.07608263690246284
+e: 100000 n: 100000 t: 16
+duration = 2633452 throughput(instr/micros) = 0.07594594471439009
+e: 100000 n: 100000 t: 32
+duration = 2611446.066666666 throughput(instr/micros) = 0.07658592017383167
+e: 100000 n: 100000 t: 64
+duration = 2639093.866666666 throughput(instr/micros) = 0.07578358713425074
+e: 100000 n: 100000 t: 128
+duration = 2630284.8666666667 throughput(instr/micros) = 0.0760373914379312
+
+running 1 test
+graphone
+VARYING NUM THREADS
+e: 1024 n: 1024 t: 1
+duration = 1314.3999999999999 throughput(instr/micros) = 1.5581253804017043
+e: 1024 n: 1024 t: 2
+duration = 1343.4666666666667 throughput(instr/micros) = 1.5244144501786423
+e: 1024 n: 1024 t: 4
+duration = 1228.5999999999997 throughput(instr/micros) = 1.6669379781865543
+e: 1024 n: 1024 t: 8
+duration = 959.9333333333335 throughput(instr/micros) = 2.1334814917702616
+e: 1024 n: 1024 t: 16
+duration = 1673.066666666667 throughput(instr/micros) = 1.2240994580809688
+e: 1024 n: 1024 t: 32
+duration = 1320.4666666666665 throughput(instr/micros) = 1.5509668299086183
+e: 1024 n: 1024 t: 64
+duration = 1852.4 throughput(instr/micros) = 1.105592744547614
+e: 1024 n: 1024 t: 128
+duration = 2541.133333333333 throughput(instr/micros) = 0.8059396069995016
+test tests::test_graph_one_vary_num_threads ... ok
+
+running 1 test
+simple
+VARYING SPARSITY
+making graph
+e: 100 n: 1000000 t: 8
+duration = 711900.4666666666 throughput(instr/micros) = 1.404831218446549
+making graph
+e: 200 n: 1000000 t: 8
+duration = 683877.8000000002 throughput(instr/micros) = 1.462541992151229
+making graph
+e: 400 n: 1000000 t: 8
+duration = 692596.8666666666 throughput(instr/micros) = 1.4444188937999818
+making graph
+e: 800 n: 1000000 t: 8
+duration = 708518.0000000001 throughput(instr/micros) = 1.4125258638453784
+making graph
+e: 1600 n: 1000000 t: 8
+duration = 692221.3333333333 throughput(instr/micros) = 1.4469360474299167
+making graph
+e: 3200 n: 1000000 t: 8
+test tests::test_simple_conc_vary_sparsity has been running for over 60 seconds
+duration = 690325.0666666667 throughput(instr/micros) = 1.4532284114266554
+making graph
+e: 6400 n: 1000000 t: 8
+duration = 682928.1333333332 throughput(instr/micros) = 1.473654328879115
+making graph
+e: 12800 n: 1000000 t: 8
+duration = 684289.6666666667 throughput(instr/micros) = 1.480074958509286
+test tests::test_simple_conc_vary_sparsity ... ok
+
+coarse simple
+VARYING SPARSITY
+making graph
+e: 100 n: 1000000 t: 8
+duration = 684371.8000000003 throughput(instr/micros) = 1.4613401662663477
+making graph
+e: 200 n: 1000000 t: 8
+duration = 684196.3333333335 throughput(instr/micros) = 1.4618610934775542
+making graph
+e: 400 n: 1000000 t: 8
+duration = 683042.0666666668 throughput(instr/micros) = 1.464624287171771
+making graph
+e: 800 n: 1000000 t: 8
+duration = 682356.8000000003 throughput(instr/micros) = 1.4666813608364415
+making graph
+e: 1600 n: 1000000 t: 8
+duration = 678792 throughput(instr/micros) = 1.4755624697992904
+making graph
+e: 3200 n: 1000000 t: 8
+test tests::test_coarse_simple_conc_vary_sparsity has been running for over 60 seconds
+duration = 682470.7999999999 throughput(instr/micros) = 1.4699530001869678
+making graph
+e: 6400 n: 1000000 t: 8
+duration = 680650.4 throughput(instr/micros) = 1.4785857761928884
+making graph
+e: 12800 n: 1000000 t: 8
+duration = 683730.2666666668 throughput(instr/micros) = 1.4812858950030388
+
+coarse csr
+VARYING SPARSITY
+e: 100 n: 1000000 t: 8
+duration = 682528.0666666665 throughput(instr/micros) = 1.4652877278502152
+e: 200 n: 1000000 t: 8
+duration = 682437.3999999999 throughput(instr/micros) = 1.465628935342641
+e: 400 n: 1000000 t: 8
+duration = 682984.2 throughput(instr/micros) = 1.4647483792450837
+e: 800 n: 1000000 t: 8
+duration = 689763.0666666665 throughput(instr/micros) = 1.4509330063675974
+e: 1600 n: 1000000 t: 8
+duration = 684472.3333333331 throughput(instr/micros) = 1.463316997959986
+e: 3200 n: 1000000 t: 8
+test tests::test_coarse_csr_conc_vary_sparsity has been running for over 60 seconds
+duration = 681199.6000000001 throughput(instr/micros) = 1.4726961084533812
+e: 6400 n: 1000000 t: 8
+duration = 688471.5999999999 throughput(instr/micros) = 1.4617886925183263
+e: 12800 n: 1000000 t: 8
+duration = 680344.8666666667 throughput(instr/micros) = 1.4886567822025163
+test tests::test_coarse_csr_conc_vary_sparsity ... ok
+
+running 1 test
+graphone
+VARYING SPARSITY
+e: 100 n: 1000000 t: 8
+duration = 687389.2666666665 throughput(instr/micros) = 1.4549252490510234
+e: 200 n: 1000000 t: 8
+duration = 689052.1333333335 throughput(instr/micros) = 1.4515592530879613
+e: 400 n: 1000000 t: 8
+duration = 687525.6666666666 throughput(instr/micros) = 1.455072950003806
+e: 800 n: 1000000 t: 8
+duration = 684288.0666666665 throughput(instr/micros) = 1.4625419450541348
+e: 1600 n: 1000000 t: 8
+duration = 687011.9333333333 throughput(instr/micros) = 1.4579077180512827
+e: 3200 n: 1000000 t: 8
+test tests::test_graph_one_vary__sparsity has been running for over 60 seconds
+duration = 681064.4666666666 throughput(instr/micros) = 1.4729883132942778
+e: 6400 n: 1000000 t: 8
+duration = 683180.8000000002 throughput(instr/micros) = 1.4731093145474812
+e: 12800 n: 1000000 t: 8
+duration = 681602.3333333334 throughput(instr/micros) = 1.4859104062143762
+test tests::test_graph_one_vary__sparsity ... ok
