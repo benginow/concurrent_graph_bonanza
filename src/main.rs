@@ -7,6 +7,7 @@ pub mod coarse;
 pub mod tests;
 pub mod bench;
 pub mod benchmark;
+pub mod one;
 
 use graph::Graph;
 
