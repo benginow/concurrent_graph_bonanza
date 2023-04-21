@@ -6,6 +6,7 @@ use rand::Rng;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::simple::SimpleGraph;
+use crate::simple_coarse::CSimpleGraph;
 use crate::one::CoarseGraphOne;
 use crate::graph::Graph;
 use crate::csr::CoarseCSRGraph;
@@ -225,6 +226,15 @@ fn test_simple_conc_vary_num_threads() {
     println!("VARYING NUM THREADS");
     for i in 0..8 {
         let g: Arc<SimpleGraph<usize>> = Arc::new(SimpleGraph::new());
+        bench(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 1 << i);
+    }
+}
+
+#[test]
+fn test_coarse_simple_conc_vary_num_threads() {
+    println!("VARYING NUM THREADS");
+    for i in 0..8 {
+        let g: Arc<CSimpleGraph<usize>> = Arc::new(CSimpleGraph::new());
         bench(g, &mut 1024, &mut 1024, &mut 0, &mut 0, 1 << i);
     }
 }
