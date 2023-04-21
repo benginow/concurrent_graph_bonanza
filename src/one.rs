@@ -9,7 +9,7 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicPtr;
 use std::marker::{Send,Sync};
-use std::cell::Cell;
+use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct CoarseLogList {
@@ -27,6 +27,19 @@ unsafe impl Sync for CoarseLogList {}
 impl CoarseLogList {
     fn intern_update_or_add_edge(&mut self, from: usize, to: usize, weight: f64, is_update: bool) {
         let mut log = self.log.write().unwrap();
+
+        log.push(
+            (
+                from,
+                to,
+                weight,
+                is_update
+            )
+        );
+        if is_update {
+            self.e.fetch_add(1, Ordering::SeqCst);
+        }
+
         if log.len() == self.log_size.load(Ordering::SeqCst) {
             let mut adj = self.adj_list.write().unwrap();
             log.iter().map(|(f,t,w,u)| {
@@ -41,18 +54,6 @@ impl CoarseLogList {
                     adj[from].push((*t, *w));
                 }
             });
-        } else {
-            log.push(
-                (
-                    from,
-                    to,
-                    weight,
-                    is_update
-                )
-            );
-            if is_update {
-                self.e.fetch_add(1, Ordering::SeqCst);
-            }
         }
     }
 }
@@ -176,7 +177,7 @@ impl CoarseLogList {
 }
 
 pub struct CoarseGraphOne<Id: Clone + Debug + Eq + Hash> {
-    log_list: Cell<CoarseLogList>,
+    log_list: RefCell<CoarseLogList>,
     internal_ids: Arc<RwLock<HashMap<Id, usize>>>
 }
 
@@ -206,19 +207,19 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     fn new() -> Self {
         Self {
             // log_list: Arc::new(CoarseLogList::new(100)),
-            log_list: Cell::new(CoarseLogList::new(100)),
+            log_list: RefCell::new(CoarseLogList::new(100)),
             internal_ids: Arc::new(RwLock::new(HashMap::new()))
         }
     }
 
     fn get_size(&self) -> (usize, usize) {
-        self.log_list.get_mut().get_size()
+        self.log_list.borrow_mut().get_size()
     }
     
     fn get_edge(&self, from: Id, to: Id) -> Result<f64, GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
-                self.log_list.get_mut().get_edge(f_, t_)
+                self.log_list.borrow_mut().get_edge(f_, t_)
             },
             Err(e) => Err(e)
         }
@@ -247,7 +248,7 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     fn add_edge(&self, from: Id, to: Id, weight: f64) -> Result<(), GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
-                self.log_list.get_mut().add_edge(f_, t_, weight)
+                self.log_list.borrow_mut().add_edge(f_, t_, weight)
             },
             Err(e) => Err(e)
         }
@@ -260,7 +261,7 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     fn update_edge(&self, from: Id, to: Id, weight: f64) -> Result<f64, GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
-                self.log_list.get_mut().update_edge(f_, t_, weight)
+                self.log_list.borrow_mut().update_edge(f_, t_, weight)
             },
             Err(e) => Err(e)
         }
@@ -269,7 +270,7 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
     fn update_or_add_edge(&self, from: Id, to: Id, weight: f64) -> Result<EdgeChange, GraphErr> {
         match self.get_ids(&from, &to) {
             Ok((f_, t_)) => {
-                self.log_list.get_mut().update_or_add_edge(f_, t_, weight)
+                self.log_list.borrow_mut().update_or_add_edge(f_, t_, weight)
             },
             Err(e) => Err(e)
         }
@@ -286,7 +287,7 @@ impl<Id: Clone + Debug + Eq + Hash> Graph<Id> for CoarseGraphOne<Id> {
                 let (v, _) = self.get_size();
                 
                 ids.insert(id, v);
-                self.log_list.get_mut().add_node(v)
+                self.log_list.borrow_mut().add_node(v)
             }
         }
     }

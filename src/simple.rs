@@ -372,5 +372,3 @@ impl<Id: Clone + Debug + Eq + Hash + Copy> Graph<Id> for SimpleGraph<Id> {
     }
 }
 
-// unsafe impl<Id: Clone + Debug + Eq + Hash> Send for SimpleGraph<Id> {}
-// unsafe impl<Id: Clone + Debug + Eq + Hash> Sync for SimpleGraph<Id> {}

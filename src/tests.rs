@@ -5,10 +5,9 @@ use std::sync::mpsc::{channel, Sender, Receiver};
 use rand::Rng;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-
 use crate::simple::SimpleGraph;
 use crate::graph::Graph;
-use crate::coarse::CoarseCSRGraph;
+use crate::csr::CoarseCSRGraph;
 use crate::graph::GraphErr;
 use std::boxed::Box;
 use std::thread;
@@ -16,7 +15,6 @@ use std::thread::JoinHandle;
 use std::cell::Cell;
 use std::sync::Arc;
 use std::time::Instant;
-
 
 // #[test]
 // fn test_simple_seq() {
@@ -66,10 +64,8 @@ fn service<G: Graph<usize> + Send + Sync>(rx: Receiver<RequestType>, graph: Arc<
             RequestType::RemoveEdge(a, b) => {
                 graph.remove_edge(a, b);
             }
-
         }
     }
-
 }
 
 fn generate_request(num: usize, nodes_gen: &AtomicUsize) -> RequestType {
@@ -275,7 +271,6 @@ fn test_coarse_conc() {
     // assert!(val.is_err());
     // assert!(g.get_size() == (4, 0));
     // g.debug();
-
     // let mut nedges = 0;
     // for i in 0..5 {
     //     for j in 0..5 {
@@ -292,6 +287,7 @@ fn test_coarse_conc() {
     //     }
     // }
 
+
     // assert!(g.get_size() == (4, nedges));
     // let mut val_ = g.remove_edge(2, 2);
     // assert!(val_.is_ok());
@@ -299,7 +295,6 @@ fn test_coarse_conc() {
     // val_ = g.remove_edge(2, 2);
     // assert!(val_ == Err(GraphErr::NoSuchEdge));
     // assert!(g.get_size() == (4, nedges - 1));
-
     // assert!(g.get_edge(2, 4) == Ok(1.0));
     // g.update_or_add_edge(2, 4, 0.5);
     // assert!(g.get_edge(2, 4) == Ok(0.5));
@@ -307,7 +302,4 @@ fn test_coarse_conc() {
     // let value = g.remove_node(1);
     // assert!(value.is_ok());
 
-
-    
-// }
 
